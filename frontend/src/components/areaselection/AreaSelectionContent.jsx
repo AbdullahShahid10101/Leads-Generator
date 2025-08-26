@@ -104,13 +104,13 @@ export default function AreaSelectionContent() {
         <div className="flex flex-col lg:flex-row gap-4">
           <button
             onClick={handleApplyArea}
-            className="bg-[var(--accent-primary)] hover:bg-[var(--accent-secondary)] text-white px-6 py-3 rounded-lg font-medium transition-colors duration-200"
+            className="bg-[var(--accent-primary)] hover:bg-[var(--accent-secondary)] text-white px-4 py-2 rounded-lg font-medium transition-colors duration-200" style={{ background: 'var(--btn-gradient)' }}
           >
             Apply Area
           </button>
           <button
             onClick={handleBackToFinder}
-            className="px-6 py-3 bg-transparent hover:bg-[var(--bg-input)] text-[var(--text-primary)] border border-[var(--border-input)] rounded-lg font-medium transition-colors duration-200"
+            className="px-4 py-2 bg-transparent hover:bg-[var(--bg-input)] text-[var(--text-primary)] border border-[var(--border-input)] rounded-lg font-medium transition-colors duration-200"
           >
             Back to Finder
           </button>

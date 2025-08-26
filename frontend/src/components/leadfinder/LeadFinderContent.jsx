@@ -90,7 +90,7 @@ export default function LeadFinderContent() {
           </div>
           <button
             onClick={handlePreviewWorkflow}
-            className="mt-4 lg:mt-0 bg-[var(--accent-primary)] hover:bg-[var(--accent-secondary)] text-white px-4 py-2 rounded-lg font-medium transition-colors duration-200"
+            className="mt-4 lg:mt-0 bg-[var(--accent-primary)] hover:bg-[var(--accent-secondary)] text-white px-4 py-2 rounded-lg font-medium transition-colors duration-200" style={{ background: 'var(--btn-gradient)' }}
           >
             Preview Workflow
           </button>
@@ -211,19 +211,19 @@ export default function LeadFinderContent() {
           <div className="flex flex-col lg:flex-row gap-4">
             <button
               onClick={handleGenerateLeads}
-              className="w-64 bg-[var(--accent-primary)] hover:bg-[var(--accent-secondary)] text-white px-4 py-3 rounded-lg font-semibold text-lg transition-colors duration-200"
+              className="w-64 bg-[var(--accent-primary)] hover:bg-[var(--accent-secondary)] text-white px-2 py-2 rounded-lg font-semibold text-lg transition-colors duration-200" style={{ background: 'var(--btn-gradient)' }}
             >
               Generate Leads (Live)
             </button>
             <button
               onClick={handleOpenAreaSelection}
-              className="w-56 px-4 py-3 hover:bg-[var(--bg-secondary)] text-[var(--text-primary)] border border-[var(--border-input)] rounded-lg font-medium transition-colors duration-200"
+              className="w-56 px-2 py-2 hover:bg-[var(--bg-secondary)] text-[var(--text-primary)] border border-[var(--border-input)] rounded-lg font-medium transition-colors duration-200"
             >
               Open Area Selection
             </button>
             <button
               onClick={handleUseIndustryPackage}
-              className="w-56 px-4 py-3 hover:bg-[var(--bg-secondary)] text-[var(--text-primary)] border border-[var(--border-input)] rounded-lg font-medium transition-colors duration-200"
+              className="w-56 px-2 py-2 hover:bg-[var(--bg-secondary)] text-[var(--text-primary)] border border-[var(--border-input)] rounded-lg font-medium transition-colors duration-200"
             >
               Use Industry Package
             </button>

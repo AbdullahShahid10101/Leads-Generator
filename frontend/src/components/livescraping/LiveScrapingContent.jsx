@@ -1,6 +1,8 @@
 import { useEffect, useRef, useState } from 'react';
+import { useNavigate } from 'react-router-dom';
 
 export default function LiveScrapingContent() {
+  const navigate = useNavigate();
   const [isRunning, setIsRunning] = useState(false);
   const [progress, setProgress] = useState(0);
   const [foundCount, setFoundCount] = useState(0);
@@ -37,6 +39,10 @@ export default function LiveScrapingContent() {
   };
 
   const stop = () => setIsRunning(false);
+
+  const handleNavigateToCleaning = () => {
+    navigate('/cleaning-verify');
+  };
 
   return (
     <div className="w-full">
@@ -88,9 +94,14 @@ export default function LiveScrapingContent() {
 
           {/* Actions */}
           <div className="flex items-center gap-3">
-            <button onClick={start} disabled={isRunning} className={`px-4 py-2 rounded-lg text-white text-sm shadow ${isRunning ? 'bg-gray-600/60 cursor-not-allowed' : 'bg-[var(--accent-primary)] hover:opacity-90'}`}>Start Scrape</button>
+            <button onClick={start} disabled={isRunning} className={`px-4 py-2 rounded-lg text-white text-sm shadow ${isRunning ? 'bg-gray-600/60 cursor-not-allowed' : 'bg-[var(--accent-primary)] hover:opacity-90'}`} style={{ background: 'var(--btn-gradient)' }}>Start Scrape</button>
             <button onClick={stop} disabled={!isRunning} className={`px-4 py-2 rounded-lg text-white text-sm shadow ${!isRunning ? 'bg-gray-600/60 cursor-not-allowed' : 'bg-red-500 hover:opacity-90'}`}>Stop</button>
-            <button className="ml-auto px-4 py-2 rounded-lg text-white text-sm bg-green-600 hover:opacity-90 shadow">Next: Clean & verify</button>
+            <button 
+              onClick={handleNavigateToCleaning}
+              className="ml-auto px-4 py-2 rounded-lg text-white text-sm bg-green-600 hover:opacity-90 shadow"
+            >
+              Next: Clean & verify
+            </button>
           </div>
         </div>
 

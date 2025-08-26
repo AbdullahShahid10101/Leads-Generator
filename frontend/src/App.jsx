@@ -6,6 +6,10 @@ import LeadFinder from './Pages/LeadFinder';
 import AreaSelection from './Pages/AreaSelection';
 import LiveScraping from './Pages/LiveScraping';
 import CleaningVerify from './Pages/CleaningVerify';
+import ResultsExport from './Pages/ResultsExport';
+import IndustryPackages from './Pages/IndustryPackages';
+import ScheduledUpdates from './Pages/ScheduledUpdates';
+import Downloads from './Pages/Downloads';
 
 function App() {
   return (
@@ -20,6 +24,10 @@ function App() {
           <Route path="/area-selection" element={<AreaSelection />} />
           <Route path="/live-scraping" element={<LiveScraping />} />
           <Route path="/cleaning-verify" element={<CleaningVerify />} />
+          <Route path="/results-export" element={<ResultsExport />} />
+          <Route path="/industry-packages" element={<IndustryPackages />} />
+          <Route path="/scheduled-updates" element={<ScheduledUpdates />} />
+          <Route path="/downloads" element={<Downloads />} />
         </Routes>
       </div>
     </Router>

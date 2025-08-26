@@ -33,9 +33,9 @@ export default function CleaningVerifyContent() {
             ))}
           </div>
           <div className="flex items-center gap-3 mt-10">
-            <button className="px-4 py-2 rounded-lg text-white text-sm shadow bg-[var(--accent-primary)]">Run Cleaning</button>
+            <button className="px-4 py-2 rounded-lg text-white text-sm shadow bg-[var(--accent-primary)]" style={{ background: 'var(--btn-gradient)' }}>Run Cleaning</button>
             <button className="px-4 py-2 rounded-lg text-white text-sm shadow bg-green-600">Run Verification</button>
-            <button className="px-4 py-2 rounded-lg text-[var(--text-primary)] text-sm bg-[var(--bg-input)] border border-[var(--border-input)]">View Result</button>
+            <button className="px-4 py-2 rounded-lg text-[var(--text-primary)] text-sm bg-[var(--bg-secondary)] hover:bg-[var(--bg-input)] border border-[var(--border-input)]">View Result</button>
           </div>
         </div>
 
@@ -56,8 +56,8 @@ export default function CleaningVerifyContent() {
               <input value={retries} onChange={(e) => setRetries(e.target.value)} className="w-full px-3 py-2 bg-[var(--bg-secondary)] border border-[var(--border-input)] rounded-md text-[var(--text-primary)] focus:outline-none focus:ring-2 focus:ring-[var(--accent-primary)]" />
             </div>
             <div className="flex items-center gap-3">
-              <button className="px-4 py-2 rounded-lg text-[var(--text-primary)] text-sm bg-[var(--bg-secondary)] border border-[var(--border-input)]">Apply Suppression List</button>
-              <button className="px-4 py-2 rounded-lg text-[var(--text-primary)] text-sm bg-[var(--bg-secondary)] border border-[var(--border-input)]">Apply Opt-out Filter</button>
+              <button className="px-4 py-2 rounded-lg text-[var(--text-primary)] text-sm bg-[var(--bg-secondary)] border border-[var(--border-input)] hover:bg-[var(--bg-input)]">Apply Suppression List</button>
+              <button className="px-4 py-2 rounded-lg text-[var(--text-primary)] text-sm bg-[var(--bg-secondary)] border border-[var(--border-input)] hover:bg-[var(--bg-input)]">Apply Opt-out Filter</button>
             </div>
           </div>
         </div>
