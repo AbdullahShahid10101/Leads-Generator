@@ -93,12 +93,27 @@ export default function LiveScrapingContent() {
           </div>
 
           {/* Actions */}
-          <div className="flex items-center gap-3">
-            <button onClick={start} disabled={isRunning} className={`px-4 py-2 rounded-lg text-white text-sm shadow ${isRunning ? 'bg-gray-600/60 cursor-not-allowed' : 'bg-[var(--accent-primary)] hover:opacity-90'}`} style={{ background: 'var(--btn-gradient)' }}>Start Scrape</button>
-            <button onClick={stop} disabled={!isRunning} className={`px-4 py-2 rounded-lg text-white text-sm shadow ${!isRunning ? 'bg-gray-600/60 cursor-not-allowed' : 'bg-red-500 hover:opacity-90'}`}>Stop</button>
+          <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-3">
+            <div className="flex flex-col sm:flex-row gap-3 flex-1">
+              <button 
+                onClick={start} 
+                disabled={isRunning} 
+                className={`flex-1 px-4 py-3 sm:py-2 rounded-lg text-white text-sm font-medium shadow transition-all duration-200 ${isRunning ? 'bg-gray-600/60 cursor-not-allowed' : 'bg-[var(--accent-primary)] hover:opacity-90 active:scale-95'}`} 
+                style={{ background: 'var(--btn-gradient)' }}
+              >
+                Start Scrape
+              </button>
+              <button 
+                onClick={stop} 
+                disabled={!isRunning} 
+                className={`flex-1 px-4 py-3 sm:py-2 rounded-lg text-white text-sm font-medium shadow transition-all duration-200 ${!isRunning ? 'bg-gray-600/60 cursor-not-allowed' : 'bg-red-500 hover:opacity-90 active:scale-95'}`}
+              >
+                Stop
+              </button>
+            </div>
             <button 
               onClick={handleNavigateToCleaning}
-              className="ml-auto px-4 py-2 rounded-lg text-white text-sm bg-green-600 hover:opacity-90 shadow"
+              className="w-full sm:w-auto px-4 py-3 sm:py-2 rounded-lg text-white text-sm font-medium bg-green-600 hover:opacity-90 active:scale-95 shadow transition-all duration-200"
             >
               Next: Clean & verify
             </button>
@@ -126,9 +141,13 @@ export default function LiveScrapingContent() {
             </div>
           </div>
 
-          <div className="flex items-center gap-3">
-            <button className="px-4 py-2 rounded-lg text-[var(--text-primary)] text-sm bg-[var(--bg-secondary)] border border-[var(--border-input)] hover:bg-[var(--bg-primary)]">Rotate Proxy</button>
-            <button className="px-4 py-2 rounded-lg text-[var(--text-primary)] text-sm bg-[var(--bg-secondary)] border border-[var(--border-input)] hover:bg-[var(--bg-primary)]">CAPTCHA Service</button>
+          <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-3">
+            <button className="flex-1 px-4 py-3 sm:py-2 rounded-lg text-[var(--text-primary)] text-sm font-medium bg-[var(--bg-secondary)] border border-[var(--border-input)] hover:bg-[var(--bg-primary)] transition-all duration-200 active:scale-95">
+              Rotate Proxy
+            </button>
+            <button className="flex-1 px-4 py-3 sm:py-2 rounded-lg text-[var(--text-primary)] text-sm font-medium bg-[var(--bg-secondary)] border border-[var(--border-input)] hover:bg-[var(--bg-primary)] transition-all duration-200 active:scale-95">
+              CAPTCHA Service
+            </button>
           </div>
         </div>
       </div>

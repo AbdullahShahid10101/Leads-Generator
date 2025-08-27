@@ -6,6 +6,7 @@ import AreaSelectionContent from "../components/areaselection/AreaSelectionConte
 import Footer from "../components/global/Footer";
 import { logoutUser } from "../service/authService";
 import Toast from "../components/global/Toast";
+import { useAuthCheck } from "../hooks/useAuthCheck";
 
 export default function AreaSelection() {
   const navigate = useNavigate();
@@ -14,13 +15,10 @@ export default function AreaSelection() {
   const [isLogoutModalOpen, setIsLogoutModalOpen] = useState(false);
   const [toast, setToast] = useState({ show: false, message: '', type: 'success' });
 
-  useEffect(() => {
-    // Check if user is authenticated
-    const isAuthenticated = localStorage.getItem('isAuthenticated');
-    if (!isAuthenticated) {
-      navigate('/login');
-    }
+  // Use the custom auth check hook
+  useAuthCheck(setToast);
 
+  useEffect(() => {
     // Add smooth scrolling to the document
     document.documentElement.style.scrollBehavior = 'smooth';
     
@@ -28,7 +26,7 @@ export default function AreaSelection() {
     return () => {
       document.documentElement.style.scrollBehavior = 'auto';
     };
-  }, [navigate]);
+  }, []);
 
   const handleLogout = () => {
     logoutUser();

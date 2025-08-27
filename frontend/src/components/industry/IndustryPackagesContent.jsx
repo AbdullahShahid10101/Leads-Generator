@@ -72,27 +72,30 @@ export default function IndustryPackagesContent() {
               key={pkg.id} 
               className="bg-[var(--bg-secondary)] border border-[var(--border-input)] rounded-xl p-6 shadow-lg hover:shadow-xl transition-shadow duration-300"
             >
-              <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-4">
-                                 {/* Package Info */}
-                 <div className="flex-1">
-                   <h3 className="text-xl font-bold text-[var(--text-primary)] mb-2">
-                     {pkg.title}
-                   </h3>
-                   <div className="flex items-center gap-4 text-lg">
+              <div className="flex items-center justify-between gap-4">
+                {/* Package Info */}
+                <div className="flex-1">
+                  <h3 className="text-lg sm:text-xl font-bold text-[var(--text-primary)] mb-2">
+                    {pkg.title}
+                  </h3>
+                  <div className="flex flex-col sm:flex-row sm:items-center gap-1 sm:gap-4 text-sm sm:text-lg">
                     <span className="text-[var(--text-muted)]">
                       {pkg.leads.toLocaleString()} leads
                     </span>
+                    <span className="text-[var(--text-muted)] hidden sm:inline">
+                      •
+                    </span>
                     <span className="text-[var(--text-muted)]">
-                      • Verify {pkg.verifyRate}%
+                      Verify {pkg.verifyRate}%
                     </span>
                   </div>
                 </div>
                 
                 {/* Use Button */}
-                <div className="lg:flex-shrink-0">
+                <div className="flex-shrink-0">
                   <button
                     onClick={() => handleUsePackage(pkg.id)}
-                    className="px-6 py-2 bg-[var(--accent-primary)] text-white rounded-lg font-semibold hover:bg-[var(--accent-secondary)] transition-colors duration-300"
+                    className="px-4 sm:px-6 py-2 bg-[var(--accent-primary)] text-white rounded-lg font-semibold hover:bg-[var(--accent-secondary)] transition-colors duration-300 text-sm sm:text-base"
                     style={{ background: 'var(--btn-gradient)' }}
                   >
                     Use

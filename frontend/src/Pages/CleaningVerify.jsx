@@ -6,6 +6,7 @@ import Footer from "../components/global/Footer";
 import CleaningVerifyContent from "../components/cleaning/CleaningVerifyContent";
 import { logoutUser } from "../service/authService";
 import Toast from "../components/global/Toast";
+import { useAuthCheck } from "../hooks/useAuthCheck";
 
 export default function CleaningVerify() {
   const navigate = useNavigate();
@@ -14,12 +15,10 @@ export default function CleaningVerify() {
   const [isLogoutModalOpen, setIsLogoutModalOpen] = useState(false);
   const [toast, setToast] = useState({ show: false, message: '', type: 'success' });
 
-  const isAnyModalOpen = isProfileModalOpen || isLogoutModalOpen;
+  // Use the custom auth check hook
+  useAuthCheck(setToast);
 
-  useEffect(() => {
-    const isAuthenticated = localStorage.getItem('isAuthenticated');
-    if (!isAuthenticated) navigate('/login');
-  }, [navigate]);
+  const isAnyModalOpen = isProfileModalOpen || isLogoutModalOpen;
 
   const handleLogout = () => {
     logoutUser();

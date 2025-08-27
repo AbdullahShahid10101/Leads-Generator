@@ -6,6 +6,7 @@ import Footer from "../components/global/Footer";
 import LiveScrapingContent from "../components/livescraping/LiveScrapingContent";
 import { logoutUser } from "../service/authService";
 import Toast from "../components/global/Toast";
+import { useAuthCheck } from "../hooks/useAuthCheck";
 
 export default function LiveScraping() {
   const navigate = useNavigate();
@@ -14,18 +15,17 @@ export default function LiveScraping() {
   const [isLogoutModalOpen, setIsLogoutModalOpen] = useState(false);
   const [toast, setToast] = useState({ show: false, message: '', type: 'success' });
 
+  // Use the custom auth check hook
+  useAuthCheck(setToast);
+
   const isAnyModalOpen = isProfileModalOpen || isLogoutModalOpen;
 
   useEffect(() => {
-    const isAuthenticated = localStorage.getItem('isAuthenticated');
-    if (!isAuthenticated) {
-      navigate('/login');
-    }
     document.documentElement.style.scrollBehavior = 'smooth';
     return () => {
       document.documentElement.style.scrollBehavior = 'auto';
     };
-  }, [navigate]);
+  }, []);
 
   const handleLogout = () => {
     logoutUser();

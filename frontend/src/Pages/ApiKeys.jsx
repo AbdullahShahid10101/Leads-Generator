@@ -2,13 +2,13 @@ import { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import Header from "../components/global/Header";
 import Sidebar from "../components/global/Sidebar";
-import DownloadsContent from "../components/downloads/DownloadsContent";
+import ApiKeysContent from "../components/apikeys/ApiKeysContent";
 import Footer from "../components/global/Footer";
 import { logoutUser } from "../service/authService";
 import Toast from "../components/global/Toast";
 import { useAuthCheck } from "../hooks/useAuthCheck";
 
-export default function Downloads() {
+export default function ApiKeys() {
   const navigate = useNavigate();
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
   const [isProfileModalOpen, setIsProfileModalOpen] = useState(false);
@@ -93,10 +93,10 @@ export default function Downloads() {
         <div className={`fixed lg:relative inset-y-0 left-0 z-50 lg:z-auto transform transition-transform duration-300 ease-in-out ${
           isSidebarOpen ? 'translate-x-0' : '-translate-x-full'
         } lg:translate-x-0 lg:block`}>
-          <Sidebar currentPage="downloads" />
+          <Sidebar currentPage="api-keys" />
         </div>
         
-        {/* Downloads Content */}
+        {/* API & Keys Content */}
         <div 
           className="flex-1 overflow-y-auto scroll-smooth transition-all duration-300"
           style={{
@@ -105,7 +105,7 @@ export default function Downloads() {
             opacity: isAnyModalOpen ? '0.9' : '1'
           }}
         >
-          <DownloadsContent />
+          <ApiKeysContent />
         </div>
       </div>
       

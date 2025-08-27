@@ -10,6 +10,10 @@ import ResultsExport from './Pages/ResultsExport';
 import IndustryPackages from './Pages/IndustryPackages';
 import ScheduledUpdates from './Pages/ScheduledUpdates';
 import Downloads from './Pages/Downloads';
+import CrmIntegration from './Pages/CrmIntegration';
+import ApiKeys from './Pages/ApiKeys';
+import BillingPlans from './Pages/BillingPlans';
+import ProtectedRoute from './components/global/ProtectedRoute';
 
 function App() {
   return (
@@ -17,8 +21,16 @@ function App() {
       <div className="App">
         <Routes>
           <Route path="/" element={<Navigate to="/signup" replace />} />
-          <Route path="/signup" element={<Signup />} />
-          <Route path="/login" element={<Login />} />
+          <Route path="/signup" element={
+            <ProtectedRoute>
+              <Signup />
+            </ProtectedRoute>
+          } />
+          <Route path="/login" element={
+            <ProtectedRoute>
+              <Login />
+            </ProtectedRoute>
+          } />
           <Route path="/dashboard" element={<Dashboard />} />
           <Route path="/lead-finder" element={<LeadFinder />} />
           <Route path="/area-selection" element={<AreaSelection />} />
@@ -28,6 +40,9 @@ function App() {
           <Route path="/industry-packages" element={<IndustryPackages />} />
           <Route path="/scheduled-updates" element={<ScheduledUpdates />} />
           <Route path="/downloads" element={<Downloads />} />
+          <Route path="/crm-integration" element={<CrmIntegration />} />
+          <Route path="/api-keys" element={<ApiKeys />} />
+          <Route path="/billing-plans" element={<BillingPlans />} />
         </Routes>
       </div>
     </Router>

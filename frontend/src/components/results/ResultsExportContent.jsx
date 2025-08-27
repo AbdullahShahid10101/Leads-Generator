@@ -177,7 +177,7 @@ export default function ResultsExportContent() {
           </div>
 
           {/* Results Table */}
-          <div>
+          <div className="overflow-x-auto">
             <table className="w-full border-b border-[var(--border-input)] mx-6">
               <thead>
                 <tr className="border-b border-[var(--border-input)]">
