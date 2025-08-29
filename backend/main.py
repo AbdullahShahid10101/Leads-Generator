@@ -5,6 +5,9 @@ from supabase import create_client, Client
 import uvicorn
 import os
 import dotenv
+import jwt
+import base64
+import json
 
 dotenv.load_dotenv()
 
@@ -76,11 +79,40 @@ def login_user(data: LoginRequest):
         if not auth_res.user:
             raise HTTPException(status_code=401, detail="Invalid credentials")
 
+        # Extract expiration time from JWT token
+        access_token = auth_res.session.access_token
+        token_expires_at = None
+        
+        try:
+            # Decode JWT token to get expiration time
+            # Split the token and get the payload part
+            token_parts = access_token.split('.')
+            if len(token_parts) == 3:
+                # Decode the payload (second part) - handle padding properly
+                payload_part = token_parts[1]
+                # Add padding if needed
+                padding = 4 - (len(payload_part) % 4)
+                if padding != 4:
+                    payload_part += '=' * padding
+                
+                payload = base64.urlsafe_b64decode(payload_part)
+                payload_data = json.loads(payload.decode('utf-8'))
+                token_expires_at = payload_data.get('exp')
+                
+                # Debug: Print the extracted data
+                print(f"Token payload: {payload_data}")
+                print(f"Extracted expiration: {token_expires_at}")
+                
+        except Exception as e:
+            print(f"Error extracting token expiration: {e}")
+            # Continue without expiration time if extraction fails
+
         return {
             "message": "Login successful",
             "user_id": auth_res.user.id,
             "access_token": auth_res.session.access_token,
             "refresh_token": auth_res.session.refresh_token,
+            "token_expires_at": token_expires_at
         }
     except Exception as e:
         # Handle specific Supabase auth errors

@@ -13,6 +13,11 @@ import Downloads from './Pages/Downloads';
 import CrmIntegration from './Pages/CrmIntegration';
 import ApiKeys from './Pages/ApiKeys';
 import BillingPlans from './Pages/BillingPlans';
+import CompetitorCompare from './Pages/CompetitorCompare';
+import Compliance from './Pages/Compliance';
+import PrivacyPolicy from './Pages/PrivacyPolicy';
+import TermsOfService from './Pages/TermsOfService';
+import HelpCenter from './Pages/HelpCenter';
 import ProtectedRoute from './components/global/ProtectedRoute';
 
 function App() {
@@ -43,6 +48,11 @@ function App() {
           <Route path="/crm-integration" element={<CrmIntegration />} />
           <Route path="/api-keys" element={<ApiKeys />} />
           <Route path="/billing-plans" element={<BillingPlans />} />
+          <Route path="/competitor-compare" element={<CompetitorCompare />} />
+          <Route path="/compliance" element={<Compliance />} />
+          <Route path="/privacy-policy" element={<PrivacyPolicy />} />
+          <Route path="/terms-of-service" element={<TermsOfService />} />
+          <Route path="/help" element={<HelpCenter />} />
         </Routes>
       </div>
     </Router>
