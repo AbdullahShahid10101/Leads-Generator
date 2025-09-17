@@ -1,5 +1,17 @@
 import { useState, useEffect } from 'react';
 
+const API_BASE = 'http://localhost:3000/api/v1';
+
+function decodeJwt(token) {
+  try {
+    const payload = token.split('.')[1];
+    const json = atob(payload.replace(/-/g, '+').replace(/_/g, '/'));
+    return JSON.parse(json);
+  } catch {
+    return null;
+  }
+}
+
 export default function ProfileModal({ isOpen, onClose }) {
   const [profileData, setProfileData] = useState({
     fullName: 'John Smith',
@@ -25,6 +37,49 @@ export default function ProfileModal({ isOpen, onClose }) {
       document.body.style.overflow = 'unset';
     };
   }, [isOpen, onClose]);
+
+  // Load profile from backend when modal opens
+  useEffect(() => {
+    const loadProfile = async () => {
+      try {
+        const token = localStorage.getItem('access_token');
+        if (!token) return;
+
+        const payload = decodeJwt(token);
+        const userId = payload?.sub || payload?.user_id || payload?.id;
+        if (!userId) return;
+
+        const res = await fetch(`${API_BASE}/profiles/${userId}`, {
+          headers: {
+            Authorization: `Bearer ${token}`
+          }
+        });
+
+        if (!res.ok) return;
+        const json = await res.json();
+        const p = json?.data || {};
+
+        const first = p.first_name || '';
+        const last = p.last_name || '';
+        const full = p.full_name || `${first} ${last}`.trim() || profileData.fullName;
+        const email = p.email || localStorage.getItem('userEmail') || profileData.email;
+        const role = p.role || profileData.role;
+
+        setProfileData({
+          fullName: full,
+          email: email,
+          role: role
+        });
+      } catch (e) {
+        // silently ignore in UI
+      }
+    };
+
+    if (isOpen) {
+      loadProfile();
+    }
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [isOpen]);
 
   const handleInputChange = (field, value) => {
     setProfileData(prev => ({

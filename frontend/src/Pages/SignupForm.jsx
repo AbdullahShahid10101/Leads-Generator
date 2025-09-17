@@ -27,10 +27,10 @@ export default function Signup() {
     setIsLoading(true);
     try {
       await registerUser({
-        first_name: formData.firstName,
-        last_name: formData.lastName,
-        email: formData.email,
-        password: formData.password,
+        firstname: (formData.firstName || '').trim(),
+        lastname: (formData.lastName || '').trim(),
+        email: (formData.email || '').trim(),
+        password: (formData.password || '').trim(),
       });
       
       // Show success toast

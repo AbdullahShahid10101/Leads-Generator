@@ -1,6 +1,6 @@
 import { useEffect } from 'react';
 
-export default function Toast({ message, type = 'success', isVisible, onClose }) {
+export default function Toast({ message, type = 'success', isVisible, onClose, actionLabel, onAction }) {
   useEffect(() => {
     if (isVisible) {
       const timer = setTimeout(() => {
@@ -18,7 +18,7 @@ export default function Toast({ message, type = 'success', isVisible, onClose })
 
   return (
     <div className="fixed top-4 right-4 z-50 animate-slide-in">
-      <div className={`${bgColor} text-white px-6 py-4 rounded-lg shadow-lg flex items-center gap-3 min-w-[300px]`}>
+      <div className={`${bgColor} text-white px-6 py-4 rounded-lg shadow-lg flex items-center gap-3 min-w-[320px]`}>
         <div className="text-xl font-bold">{icon}</div>
         <div className="flex-1">
           <p className="font-medium">
@@ -26,6 +26,14 @@ export default function Toast({ message, type = 'success', isVisible, onClose })
           </p>
           <p className="text-sm opacity-90">{message}</p>
         </div>
+        {actionLabel && onAction && (
+          <button
+            onClick={onAction}
+            className="ml-2 px-3 py-1 text-xs font-semibold border border-white/70 rounded hover:bg-white/10 transition-colors"
+          >
+            {actionLabel}
+          </button>
+        )}
         <button
           onClick={onClose}
           className="text-white hover:text-gray-200 text-xl font-bold"

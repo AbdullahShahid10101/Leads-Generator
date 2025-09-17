@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import LoginHeader from '../components/login/LoginHeader';
-import { loginUser } from '../service/authService';
+import { loginUser, resendConfirmationEmail } from '../service/authService';
 import LoginForm from '../components/login/LoginForm';
 import LoginDivider from '../components/login/LoginDivider';
 import GoogleLoginButton from '../components/login/GoogleLoginButton';
@@ -14,6 +14,7 @@ export default function LoginFormPage() {
   const [password, setPassword] = useState('');
   const [isLoading, setIsLoading] = useState(false);
   const [toast, setToast] = useState({ show: false, message: '', type: 'success' });
+  const [toastAction, setToastAction] = useState(null);
   const navigate = useNavigate();
 
   // Check if user is already authenticated
@@ -32,11 +33,8 @@ export default function LoginFormPage() {
       console.log('Login successful:', result);
       
       // Show success toast
-      setToast({
-        show: true,
-        message: 'Login successful! Redirecting to dashboard...',
-        type: 'success'
-      });
+      setToast({ show: true, message: 'Login successful! Redirecting to dashboard...', type: 'success' });
+      setToastAction(null);
       
       // Navigate after a short delay to show the toast
       setTimeout(() => {
@@ -45,21 +43,44 @@ export default function LoginFormPage() {
       
     } catch (e) {
       console.error('Login error:', e);
-      const errorMessage = String(e);
-      
-      // Show error toast
-      setToast({
-        show: true,
-        message: errorMessage,
-        type: 'error'
-      });
+      if (typeof e === 'object' && e?.code) {
+        if (e.code === 'email_not_confirmed') {
+          setToast({ show: true, message: e.message, type: 'error' });
+          setToastAction(() => handleResend);
+        } else if (e.code === 'invalid_credentials') {
+          setToast({ show: true, message: e.message, type: 'error' });
+          setToastAction(null);
+        } else {
+          setToast({ show: true, message: e.message || 'Login failed', type: 'error' });
+          setToastAction(null);
+        }
+      } else {
+        const msg = typeof e === 'string' ? e : 'Login failed';
+        setToast({ show: true, message: msg, type: 'error' });
+        setToastAction(null);
+      }
     } finally {
       setIsLoading(false);
     }
   };
 
+  // Optional helper to resend confirmation
+  const handleResend = async () => {
+    try {
+      if (!email) {
+        setToast({ show: true, message: 'Enter your email first.', type: 'error' });
+        return;
+      }
+      await resendConfirmationEmail(email);
+      setToast({ show: true, message: 'Confirmation email sent.', type: 'success' });
+    } catch (err) {
+      setToast({ show: true, message: String(err), type: 'error' });
+    }
+  };
+
   const closeToast = () => {
     setToast({ show: false, message: '', type: 'success' });
+    setToastAction(null);
   };
 
   return (
@@ -90,6 +111,8 @@ export default function LoginFormPage() {
         type={toast.type}
         isVisible={toast.show}
         onClose={closeToast}
+        actionLabel={toastAction ? 'Resend confirmation' : undefined}
+        onAction={toastAction || undefined}
       />
     </div>
   );

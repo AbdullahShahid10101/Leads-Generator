@@ -2,15 +2,26 @@ import axios from "axios";
 
 // Prefer Vite env if provided, fallback to local
 const API_URL =
-  import.meta?.env?.VITE_API_URL ||
-  "https://leadgenerationbackend-production.up.railway.app";
+  "http://localhost:3000/api/v1/auth";
 
 export async function registerUser(userData) {
   try {
     const res = await axios.post(`${API_URL}/register`, userData);
     return res.data;
   } catch (err) {
-    throw err.response?.data?.detail || "Signup failed";
+    // Prefer backend error message shape { error: string }
+    const apiMsg = err.response?.data?.error || err.response?.data?.detail;
+    throw apiMsg || "Signup failed";
+  }
+}
+
+export async function resendConfirmationEmail(email) {
+  try {
+    const res = await axios.post(`${API_URL}/resend-confirmation`, { email });
+    return res.data;
+  } catch (err) {
+    const apiMsg = err.response?.data?.error || err.response?.data?.detail;
+    throw apiMsg || 'Failed to resend confirmation email';
   }
 }
 
@@ -19,24 +30,35 @@ export async function loginUser(credentials) {
     console.log("Making login request to:", `${API_URL}/login`);
     const res = await axios.post(`${API_URL}/login`, credentials);
     console.log("Login response:", res.data);
-    localStorage.setItem("access_token", res.data.access_token);
-    localStorage.setItem("refresh_token", res.data.refresh_token);
+    const session = res.data?.session || {};
+    const accessToken = session.access_token || res.data?.access_token;
+    const refreshToken = session.refresh_token || res.data?.refresh_token;
+    const expiresAt = session.expires_at || res.data?.token_expires_at;
+
+    if (accessToken) {
+      localStorage.setItem("access_token", accessToken);
+    }
+    if (refreshToken) {
+      localStorage.setItem("refresh_token", refreshToken);
+    }
     localStorage.setItem("isAuthenticated", "true");
     localStorage.setItem("userEmail", credentials.email);
     
     // Store token expiration time if provided
-    if (res.data.token_expires_at) {
-      localStorage.setItem("token_expires_at", res.data.token_expires_at.toString());
+    if (expiresAt) {
+      localStorage.setItem("token_expires_at", String(expiresAt));
     } else {
       // Fallback: Extract expiration time from JWT token directly
       try {
-        const token = res.data.access_token;
-        const tokenParts = token.split('.');
-        if (tokenParts.length === 3) {
-          const payload = JSON.parse(atob(tokenParts[1]));
-          const exp = payload.exp;
-          if (exp) {
-            localStorage.setItem("token_expires_at", exp.toString());
+        const token = accessToken;
+        if (token) {
+          const tokenParts = token.split('.');
+          if (tokenParts.length === 3) {
+            const payload = JSON.parse(atob(tokenParts[1]));
+            const exp = payload.exp;
+            if (exp) {
+              localStorage.setItem("token_expires_at", String(exp));
+            }
           }
         }
       } catch (error) {
@@ -49,7 +71,23 @@ export async function loginUser(credentials) {
     return res.data;
   } catch (err) {
     console.error("Login error in authService:", err);
-    throw err.response?.data?.detail || "Login failed";
+    const status = err.response?.status;
+    const backendMsg = err.response?.data?.error || err.response?.data?.detail || '';
+
+    // Map backend messages/status to user-friendly errors
+    if (status === 403 || backendMsg.toLowerCase().includes('email not confirmed')) {
+      throw {
+        code: 'email_not_confirmed',
+        message: 'Email not confirmed. Please check your inbox to confirm.',
+      };
+    }
+    if (status === 401 || backendMsg.toLowerCase().includes('invalid email or password')) {
+      throw {
+        code: 'invalid_credentials',
+        message: 'Invalid email or password.',
+      };
+    }
+    throw { code: 'unknown', message: backendMsg || 'Login failed' };
   }
 }
 
@@ -84,13 +122,14 @@ export function isAuthenticated() {
   } else {
     // Fallback: Check if token is expired (JWT tokens have expiration time)
     try {
-      const payload = JSON.parse(atob(token.split('.')[1]));
-      const currentTime = Date.now() / 1000;
-      
-      if (payload.exp && payload.exp < currentTime) {
-        // Token is expired, clear storage
-        logoutUser();
-        return false;
+      const parts = token.split('.');
+      if (parts.length === 3) {
+        const payload = JSON.parse(atob(parts[1]));
+        const currentTime = Date.now() / 1000;
+        if (payload.exp && payload.exp < currentTime) {
+          logoutUser();
+          return false;
+        }
       }
     } catch (error) {
       console.error("Error parsing token:", error);
@@ -125,13 +164,14 @@ export function checkAuthStatus() {
   } else {
     // Fallback: Check if token is expired (JWT tokens have expiration time)
     try {
-      const payload = JSON.parse(atob(token.split('.')[1]));
-      const currentTime = Date.now() / 1000;
-      
-      if (payload.exp && payload.exp < currentTime) {
-        // Token is expired, clear storage and return expired reason
-        logoutUser();
-        return { isValid: false, reason: 'expired' };
+      const parts = token.split('.');
+      if (parts.length === 3) {
+        const payload = JSON.parse(atob(parts[1]));
+        const currentTime = Date.now() / 1000;
+        if (payload.exp && payload.exp < currentTime) {
+          logoutUser();
+          return { isValid: false, reason: 'expired' };
+        }
       }
     } catch (error) {
       console.error("Error parsing token:", error);
