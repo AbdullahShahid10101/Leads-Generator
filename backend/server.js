@@ -47,6 +47,7 @@ app.get(API_VERSION, (req, res) => {
 // Routes
 app.use(`${API_VERSION}/auth`, require('./routes/authRoutes'));
 app.use(`${API_VERSION}/profiles`, require('./routes/profilesRoutes'));
+app.use(`${API_VERSION}/leads`, require('./routes/leadsRoutes'));
 
 // 404 handler
 app.use(notFound);
