@@ -30,35 +30,36 @@ export async function loginUser(credentials) {
     console.log("Making login request to:", `${API_URL}/login`);
     const res = await axios.post(`${API_URL}/login`, credentials);
     console.log("Login response:", res.data);
-    const session = res.data?.session || {};
-    const accessToken = session.access_token || res.data?.access_token;
-    const refreshToken = session.refresh_token || res.data?.refresh_token;
-    const expiresAt = session.expires_at || res.data?.token_expires_at;
+    // Prefer top-level tokens, fall back to session tokens
+    const accessToken = res.data?.access_token || res.data?.session?.access_token;
+    const refreshToken = res.data?.refresh_token || res.data?.session?.refresh_token;
 
     if (accessToken) {
       localStorage.setItem("access_token", accessToken);
+      if (refreshToken) localStorage.setItem("refresh_token", refreshToken);
+      localStorage.setItem("isAuthenticated", "true");
+      localStorage.setItem("userEmail", credentials.email);
+    } else {
+      // No token returned; do not mark as authenticated
+      localStorage.removeItem("access_token");
+      localStorage.removeItem("refresh_token");
+      localStorage.setItem("isAuthenticated", "false");
+      throw { code: 'no_token', message: 'Login succeeded but no token returned.' };
     }
-    if (refreshToken) {
-      localStorage.setItem("refresh_token", refreshToken);
-    }
-    localStorage.setItem("isAuthenticated", "true");
-    localStorage.setItem("userEmail", credentials.email);
     
     // Store token expiration time if provided
-    if (expiresAt) {
-      localStorage.setItem("token_expires_at", String(expiresAt));
+    if (res.data.token_expires_at) {
+      localStorage.setItem("token_expires_at", res.data.token_expires_at.toString());
     } else {
       // Fallback: Extract expiration time from JWT token directly
       try {
         const token = accessToken;
-        if (token) {
-          const tokenParts = token.split('.');
-          if (tokenParts.length === 3) {
-            const payload = JSON.parse(atob(tokenParts[1]));
-            const exp = payload.exp;
-            if (exp) {
-              localStorage.setItem("token_expires_at", String(exp));
-            }
+        const tokenParts = typeof token === 'string' ? token.split('.') : [];
+        if (tokenParts.length === 3) {
+          const payload = JSON.parse(atob(tokenParts[1]));
+          const exp = payload.exp;
+          if (exp) {
+            localStorage.setItem("token_expires_at", exp.toString());
           }
         }
       } catch (error) {
@@ -75,6 +76,9 @@ export async function loginUser(credentials) {
     const backendMsg = err.response?.data?.error || err.response?.data?.detail || '';
 
     // Map backend messages/status to user-friendly errors
+    if (err?.code === 'no_token') {
+      throw err;
+    }
     if (status === 403 || backendMsg.toLowerCase().includes('email not confirmed')) {
       throw {
         code: 'email_not_confirmed',
@@ -123,13 +127,14 @@ export function isAuthenticated() {
     // Fallback: Check if token is expired (JWT tokens have expiration time)
     try {
       const parts = token.split('.');
-      if (parts.length === 3) {
-        const payload = JSON.parse(atob(parts[1]));
-        const currentTime = Date.now() / 1000;
-        if (payload.exp && payload.exp < currentTime) {
-          logoutUser();
-          return false;
-        }
+      if (parts.length !== 3) return true; // non-JWT token; assume valid until told otherwise
+      const payload = JSON.parse(atob(parts[1]));
+      const currentTime = Date.now() / 1000;
+      
+      if (payload.exp && payload.exp < currentTime) {
+        // Token is expired, clear storage
+        logoutUser();
+        return false;
       }
     } catch (error) {
       console.error("Error parsing token:", error);
@@ -164,14 +169,13 @@ export function checkAuthStatus() {
   } else {
     // Fallback: Check if token is expired (JWT tokens have expiration time)
     try {
-      const parts = token.split('.');
-      if (parts.length === 3) {
-        const payload = JSON.parse(atob(parts[1]));
-        const currentTime = Date.now() / 1000;
-        if (payload.exp && payload.exp < currentTime) {
-          logoutUser();
-          return { isValid: false, reason: 'expired' };
-        }
+      const payload = JSON.parse(atob(token.split('.')[1]));
+      const currentTime = Date.now() / 1000;
+      
+      if (payload.exp && payload.exp < currentTime) {
+        // Token is expired, clear storage and return expired reason
+        logoutUser();
+        return { isValid: false, reason: 'expired' };
       }
     } catch (error) {
       console.error("Error parsing token:", error);
