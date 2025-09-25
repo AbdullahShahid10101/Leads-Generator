@@ -1,0 +1,270 @@
+{
+  "source": "Google Maps",
+  "stats": {
+    "total_raw": 20,
+    "total_cleaned": 20,
+    "duplicates_removed": 0
+  },
+  "results": [
+    {
+      "name": "209 Nyc Dental",
+      "address": "209 E 56th St 1st floor, New York, NY 10022",
+      "phone": "+2123552290",
+      "website": "www.209nycdental.com/?utm_source=google&utm_medium=organic&utm_campaign=gmb",
+      "rating": 4.9,
+      "reviews": 1685,
+      "gps": {
+        "latitude": 40.7594146,
+        "longitude": -73.9671025
+      },
+      "email": null
+    },
+    {
+      "name": "Pearl Dental Nyc",
+      "address": "233 Broadway 18 Floor, Suite 1801, New York, NY 10279",
+      "phone": "+2123449317",
+      "website": "www.pearldentalnyc.com",
+      "rating": 4.9,
+      "reviews": 439,
+      "gps": {
+        "latitude": 40.7124242,
+        "longitude": -74.0082073
+      },
+      "email": null
+    },
+    {
+      "name": "New York Dental Office",
+      "address": "245 E 63rd St #110, New York, NY 10065",
+      "phone": "+2125483261",
+      "website": "www.newyorkdentaloffice.com",
+      "rating": 4.9,
+      "reviews": 420,
+      "gps": {
+        "latitude": 40.7633351,
+        "longitude": -73.9627181
+      },
+      "email": null
+    },
+    {
+      "name": "Nyc Smile Spa",
+      "address": "30 E 60th St Suite 1201, New York, NY 10022",
+      "phone": "+6463742242",
+      "website": "www.nycsmilespa.com",
+      "rating": 4.9,
+      "reviews": 367,
+      "gps": {
+        "latitude": 40.7637066,
+        "longitude": -73.970242
+      },
+      "email": null
+    },
+    {
+      "name": "Sky Dental",
+      "address": "111 Broadway Suite 1304, New York, NY 10006",
+      "phone": "+2126001996",
+      "website": "skydentalnyc.com/?utm_campaign=gmb",
+      "rating": 4.9,
+      "reviews": 2419,
+      "gps": {
+        "latitude": 40.7086853,
+        "longitude": -74.01154869999999
+      },
+      "email": null
+    },
+    {
+      "name": "New York General Dentistry",
+      "address": "133 E 58th St Ste 409, New York, NY 10022",
+      "phone": "+2128380842",
+      "website": "newyorkgeneraldentistry.com/?utm_source=gmblisting&utm_medium=organic",
+      "rating": 4.9,
+      "reviews": 345,
+      "gps": {
+        "latitude": 40.7619525,
+        "longitude": -73.9689326
+      },
+      "email": null
+    },
+    {
+      "name": "Expert Dental - Midtown",
+      "address": "110 E 40th St #104, New York, NY 10016",
+      "phone": "+2127633383",
+      "website": "www.expertdentalnyc.com",
+      "rating": 4.5,
+      "reviews": 1944,
+      "gps": {
+        "latitude": 40.7503706,
+        "longitude": -73.9780354
+      },
+      "email": null
+    },
+    {
+      "name": "Diamond District Dental Nyc - Midtown Cosmetic Dentist",
+      "address": "10 W 46th St #1401, New York, NY 10036",
+      "phone": "+6467517355",
+      "website": "www.dddentalnyc.com",
+      "rating": 4.9,
+      "reviews": 565,
+      "gps": {
+        "latitude": 40.7562341,
+        "longitude": -73.980048
+      },
+      "email": null
+    },
+    {
+      "name": "Nyc Dental Center",
+      "address": "216 E 39th St #1, New York, NY 10016",
+      "phone": "+6468613070",
+      "website": "weence.com/dentists/new-york-1/nyc-dental-center",
+      "rating": 4.4,
+      "reviews": 234,
+      "gps": {
+        "latitude": 40.7483698,
+        "longitude": -73.9752108
+      },
+      "email": null
+    },
+    {
+      "name": "Maiden Lane Dental - Financial District Nyc",
+      "address": "80 Maiden Ln #702, New York, NY 10038",
+      "phone": "+2125094585",
+      "website": "maidenlanedental.com",
+      "rating": 4.9,
+      "reviews": 459,
+      "gps": {
+        "latitude": 40.7071307,
+        "longitude": -74.0077735
+      },
+      "email": null
+    },
+    {
+      "name": "Studio Smiles Nyc",
+      "address": "41 Park Ave # 1C, New York, NY 10016",
+      "phone": "+6464701376",
+      "website": "www.studiosmilesnyc.com",
+      "rating": 4.9,
+      "reviews": 570,
+      "gps": {
+        "latitude": 40.748366,
+        "longitude": -73.97995039999999
+      },
+      "email": null
+    },
+    {
+      "name": "My Nyc Dentist - Hudson Street Dental",
+      "address": "90 Vandam St, New York, NY 10013",
+      "phone": "+2123590064",
+      "website": "www.mynyc-dentist.com",
+      "rating": 4.9,
+      "reviews": 212,
+      "gps": {
+        "latitude": 40.7265687,
+        "longitude": -74.00812239999999
+      },
+      "email": null
+    },
+    {
+      "name": "Gramercy Dental Nyc",
+      "address": "8 Gramercy Pk S #1b, New York, NY 10003",
+      "phone": "+2126142662",
+      "website": "gramercydental.nyc",
+      "rating": 4.9,
+      "reviews": 90,
+      "gps": {
+        "latitude": 40.738028,
+        "longitude": -73.9874355
+      },
+      "email": null
+    },
+    {
+      "name": "Village Dental Nyc",
+      "address": "77 E 12th St, New York, NY 10003",
+      "phone": "+3322304916",
+      "website": "villagedentalnyc.com",
+      "rating": 4.8,
+      "reviews": 406,
+      "gps": {
+        "latitude": 40.7330427,
+        "longitude": -73.9902582
+      },
+      "email": null
+    },
+    {
+      "name": "Midtown Dental Group Fashion District",
+      "address": "241 W 37th St Ground Floor, New York, NY 10018",
+      "phone": "+2127304440",
+      "website": "www.midtowndentalgroup.com",
+      "rating": 4.9,
+      "reviews": 633,
+      "gps": {
+        "latitude": 40.7538706,
+        "longitude": -73.9909457
+      },
+      "email": null
+    },
+    {
+      "name": "Midtown Dental Care Associates",
+      "address": "12 E 41st St suite 1100, New York, NY 10017",
+      "phone": "+2126854730",
+      "website": "www.midtowndentalcareassociates.com/?utm_source=gmb&utm_medium=organic",
+      "rating": 4.9,
+      "reviews": 544,
+      "gps": {
+        "latitude": 40.752382,
+        "longitude": -73.980661
+      },
+      "email": null
+    },
+    {
+      "name": "Herald Square Dental & The Denture Center",
+      "address": "224 W 35th St 16th Floor, New York, NY 10001",
+      "phone": "+2126890024",
+      "website": "www.heraldsquarecosmeticdental.com",
+      "rating": 4.8,
+      "reviews": 381,
+      "gps": {
+        "latitude": 40.7519467,
+        "longitude": -73.9911001
+      },
+      "email": null
+    },
+    {
+      "name": "172 Nyc Dental",
+      "address": "172 Madison Ave Comm 1, New York, NY 10016",
+      "phone": "+6469215541",
+      "website": "172nycdental.com/?utm_source=google&utm_medium=organic&utm_campaign=gmb",
+      "rating": 4.9,
+      "reviews": 198,
+      "gps": {
+        "latitude": 40.747430699999995,
+        "longitude": -73.9835995
+      },
+      "email": null
+    },
+    {
+      "name": "My Nyc Dentist - 34Th Street Dental",
+      "address": "225 W 35th St # 2, New York, NY 10001",
+      "phone": "+2125648164",
+      "website": "www.mynyc-dentist.com",
+      "rating": 4.8,
+      "reviews": 466,
+      "gps": {
+        "latitude": 40.7522776,
+        "longitude": -73.991056
+      },
+      "email": null
+    },
+    {
+      "name": "Advanced Dental Arts Nyc",
+      "address": "55 E 9th St, New York, NY 10003",
+      "phone": "+2123881170",
+      "website": "advanceddentalartsnyc.com",
+      "rating": 4.8,
+      "reviews": 378,
+      "gps": {
+        "latitude": 40.7318018,
+        "longitude": -73.9931647
+      },
+      "email": null
+    }
+  ]
+}

@@ -17,6 +17,18 @@ const app = express();
 app.set('trust proxy', 1);
 
 // Middleware
+
+const { handleStripeWebhook } = require('./controllers/billingController');
+
+// Stripe webhook (must use raw body) - BEFORE express.json()
+app.post(
+  '/webhooks/stripe',
+  express.raw({ type: 'application/json' }),
+  handleStripeWebhook
+);
+
+
+// JSON parser for general routes (after webhook)
 app.use(express.json());
 app.use(logger);
 app.use(corsMiddleware);
@@ -48,6 +60,8 @@ app.get(API_VERSION, (req, res) => {
 app.use(`${API_VERSION}/auth`, require('./routes/authRoutes'));
 app.use(`${API_VERSION}/profiles`, require('./routes/profilesRoutes'));
 app.use(`${API_VERSION}/leads`, require('./routes/leadsRoutes'));
+app.use(`${API_VERSION}/model`, require('./routes/modelRoutes'));
+app.use(`${API_VERSION}/billing`, require('./routes/billingRoutes'));
 
 // 404 handler
 app.use(notFound);

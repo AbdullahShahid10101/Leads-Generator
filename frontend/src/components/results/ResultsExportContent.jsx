@@ -1,85 +1,63 @@
-import { useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
+import { useLocation } from 'react-router-dom';
+import { getSavedLeads, saveCleanedLeads } from '../../service/modelService';
 
 export default function ResultsExportContent() {
-  const [selectedLeads, setSelectedLeads] = useState([1, 2, 3]); // Pre-select first 3 as shown in image
+  const location = useLocation();
+  const [selectedLeads, setSelectedLeads] = useState([]);
   const [searchTerm, setSearchTerm] = useState('');
   const [bulkAction, setBulkAction] = useState('None');
+  const [leads, setLeads] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState('');
+  const [pendingLeads, setPendingLeads] = useState([]);
+  const [saving, setSaving] = useState(false);
 
-  // Mock data matching the image exactly
-  const mockLeads = [
-    {
-      id: 1,
-      company: 'Bright Dental',
-      contact: 'Dr. Alice Carter',
-      role: 'Owner',
-      email: 'contact@brightdental.com',
-      location: 'Irvine, CA',
-      status: 'Verified'
-    },
-    {
-      id: 2,
-      company: 'Glow Salon',
-      contact: 'Sarah Lee',
-      role: 'Manager',
-      email: 'sarah@glowsalon.com',
-      location: 'Chicago, IL',
-      status: 'Verified'
-    },
-    {
-      id: 3,
-      company: 'Urban Bites',
-      contact: 'David Kim',
-      role: 'Owner',
-      email: 'contact@urbanbites.com',
-      location: 'Seattle, WA',
-      status: 'Failed'
-    },
-    {
-      id: 4,
-      company: 'Spark Tutors',
-      contact: 'Olivia Adams',
-      role: 'Coordinator',
-      email: 'olivia@sparktutores.com',
-      location: 'Boston, MA',
-      status: 'Verified'
-    },
-    {
-      id: 5,
-      company: 'NYC Smiles',
-      contact: 'Dr. Noah Greens',
-      role: 'Owner',
-      email: 'contact@nycsmiles.com',
-      location: 'Manhattan, NY',
-      status: 'Verified'
-    },
-    {
-      id: 6,
-      company: 'FitZone Gym',
-      contact: 'Mark Johnson',
-      role: 'Manager',
-      email: 'contact@fitzonegym.com',
-      location: 'New York, NY',
-      status: 'Verified'
-    },
-    {
-      id: 7,
-      company: 'Elite Cars',
-      contact: 'Michael Brown',
-      role: 'Manager',
-      email: 'contact@elitecars.com',
-      location: 'Phoenix, AZ',
-      status: 'Failed'
-    },
-    {
-      id: 8,
-      company: 'Swift Travel',
-      contact: 'Emily James',
-      role: 'Partner',
-      email: 'emily@swifftravel.com',
-      location: 'Chicago, IL',
-      status: 'Verified'
+  useEffect(() => {
+    let active = true;
+    async function load() {
+      setLoading(true);
+      setError('');
+      try {
+        const data = await getSavedLeads({ limit: 500 });
+        if (!active) return;
+        const arr = Array.isArray(data) ? data : (data?.data || []);
+        setLeads(arr);
+        setSelectedLeads([]);
+      } catch (e) {
+        if (!active) return;
+        setError(e?.response?.data?.error || e?.message || 'Failed to load leads');
+      } finally {
+        if (active) setLoading(false);
+      }
     }
-  ];
+    load();
+    return () => { active = false; };
+  }, []);
+
+  // Pick up pending leads passed from Cleaning page
+  useEffect(() => {
+    const incoming = location.state?.pendingLeads;
+    if (Array.isArray(incoming) && incoming.length > 0) {
+      setPendingLeads(incoming);
+    }
+  }, [location.state]);
+
+  const uiLeads = useMemo(() => {
+    return (leads || []).map(l => ({
+      id: l.id,
+      company: l.company || l.name || '',
+      contact: l.name || '',
+      role: l.role || '',
+      email: l.email || '',
+      phone: l.phone || '',
+      location: l.location || '',
+      industry: l.industry || '',
+      source: l.source || '',
+      status: 'Verified',
+      created_at: l.created_at || ''
+    }));
+  }, [leads]);
 
   const handleSelectLead = (leadId) => {
     if (selectedLeads.includes(leadId)) {
@@ -90,10 +68,10 @@ export default function ResultsExportContent() {
   };
 
   const handleSelectAll = () => {
-    if (selectedLeads.length === mockLeads.length) {
+    if (selectedLeads.length === uiLeads.length) {
       setSelectedLeads([]);
     } else {
-      setSelectedLeads(mockLeads.map(lead => lead.id));
+      setSelectedLeads(uiLeads.map(lead => lead.id));
     }
   };
 
@@ -108,11 +86,81 @@ export default function ResultsExportContent() {
     }
   };
 
-  const filteredLeads = mockLeads.filter(lead =>
+  const filteredLeads = uiLeads.filter(lead =>
     lead.company.toLowerCase().includes(searchTerm.toLowerCase()) ||
     lead.contact.toLowerCase().includes(searchTerm.toLowerCase()) ||
     lead.email.toLowerCase().includes(searchTerm.toLowerCase())
   );
+
+  function toCSV(rows) {
+    if (!rows || rows.length === 0) return '';
+    const headers = ['id','company','contact','email','phone','location','industry','source','created_at'];
+    const out = [headers.join(',')];
+    rows.forEach(r => {
+      const vals = [
+        r.id,
+        r.company || '',
+        r.contact || '',
+        r.email || '',
+        r.phone || '',
+        r.location || '',
+        r.industry || '',
+        r.source || '',
+        r.created_at || ''
+      ].map(v => `"${String(v).replace(/"/g, '""')}"`);
+      out.push(vals.join(','));
+    });
+    return out.join('\n');
+  }
+
+  function download(filename, content, mime = 'text/plain') {
+    const blob = new Blob([content], { type: mime });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = filename;
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    URL.revokeObjectURL(url);
+  }
+
+  const handleDownloadAllCSV = () => {
+    const csv = toCSV(uiLeads);
+    download('leads.csv', csv, 'text/csv;charset=utf-8;');
+  };
+
+  const handleDownloadSelectedCSV = () => {
+    const rows = uiLeads.filter(l => selectedLeads.includes(l.id));
+    const csv = toCSV(rows);
+    download('leads_selected.csv', csv, 'text/csv;charset=utf-8;');
+  };
+
+  const handleDownloadAllJSON = () => {
+    download('leads.json', JSON.stringify(leads, null, 2), 'application/json');
+  };
+
+  const handleSavePendingLeads = async () => {
+    if (!pendingLeads || pendingLeads.length === 0) return;
+    setSaving(true);
+    try {
+      const res = await saveCleanedLeads(pendingLeads);
+      if (res?.success) {
+        // refresh list
+        const data = await getSavedLeads({ limit: 500 });
+        const arr = Array.isArray(data) ? data : (data?.data || []);
+        setLeads(arr);
+        setPendingLeads([]);
+        alert(`Saved ${res.inserted_count || 0} leads`);
+      } else {
+        alert(res?.error || 'Failed to save leads');
+      }
+    } catch (e) {
+      alert(e?.response?.data?.error || e?.message || 'Failed to save leads');
+    } finally {
+      setSaving(false);
+    }
+  };
 
   return (
     <div className="flex-1 p-4 lg:p-6">
@@ -132,14 +180,14 @@ export default function ResultsExportContent() {
           
           {/* Right Side: Action Buttons */}
           <div className="flex flex-col sm:flex-row gap-3 lg:justify-end lg:items-center">
-            <button className="text-base px-4 py-2 bg-[var(--accent-primary)] text-[var(--text-secondary)] rounded-lg  hover:bg-[var(--accent-primary)] transition-colors duration-300"style={{ background: 'var(--btn-gradient)' }}>
-              Save List
+            <button onClick={handleSavePendingLeads} disabled={saving || pendingLeads.length === 0} className="text-base px-4 py-2 bg-[var(--accent-primary)] text-[var(--text-secondary)] rounded-lg  hover:bg-[var(--accent-primary)] transition-colors duration-300 disabled:opacity-50 disabled:cursor-not-allowed" style={{ background: 'var(--btn-gradient)' }}>
+              {saving ? 'Saving…' : `Save List to Database  (${pendingLeads.length})`}
             </button>
-            <button className="text-base px-4 py-2 bg-[var(--bg-secondary)] border border-[var(--border-input)] text-[var(--text-secondary)] rounded-lg  hover:bg-[var(--bg-primary)] hover:text-[var(--text-primary)] transition-colors duration-300">
-              Download
+            <button onClick={handleDownloadAllCSV} disabled={loading || uiLeads.length === 0} className="text-base px-4 py-2 bg-[var(--bg-secondary)] border border-[var(--border-input)] text-[var(--text-secondary)] rounded-lg  hover:bg-[var(--bg-primary)] hover:text-[var(--text-primary)] transition-colors duration-300 disabled:opacity-50 disabled:cursor-not-allowed">
+              Download CSV
             </button>
-            <button className="text-base px-4 py-2 bg-[var(--bg-secondary)] border border-[var(--border-input)] text-[var(--text-secondary)] rounded-lg hover:bg-[var(--bg-primary)] hover:text-[var(--text-primary)] transition-colors duration-300">
-              Export to CRM
+            <button onClick={handleDownloadAllJSON} disabled={loading || uiLeads.length === 0} className="text-base px-4 py-2 bg-[var(--bg-secondary)] border border-[var(--border-input)] text-[var(--text-secondary)] rounded-lg hover:bg-[var(--bg-primary)] hover:text-[var(--text-primary)] transition-colors duration-300 disabled:opacity-50 disabled:cursor-not-allowed">
+              Download JSON
             </button>
           </div>
         </div>
@@ -184,7 +232,7 @@ export default function ResultsExportContent() {
                   <th className="px-6 py-3 text-left text-xs font-medium text-[var(--text-secondary)] uppercase tracking-wider">
                     <input
                       type="checkbox"
-                      checked={selectedLeads.length === mockLeads.length}
+                      checked={selectedLeads.length > 0 && selectedLeads.length === uiLeads.length}
                       onChange={handleSelectAll}
                       className="rounded border-[var(--border-input)] text-[var(--accent-primary)] focus:ring-[var(--accent-primary)]"
                     />
@@ -210,7 +258,22 @@ export default function ResultsExportContent() {
                 </tr>
               </thead>
               <tbody>
-                {filteredLeads.map((lead) => (
+                {loading && (
+                  <tr>
+                    <td colSpan={7} className="px-6 py-6 text-center text-[var(--text-muted)]">Loading leads...</td>
+                  </tr>
+                )}
+                {!loading && error && (
+                  <tr>
+                    <td colSpan={7} className="px-6 py-6 text-center text-red-500">{error}</td>
+                  </tr>
+                )}
+                {!loading && !error && filteredLeads.length === 0 && (
+                  <tr>
+                    <td colSpan={7} className="px-6 py-6 text-center text-[var(--text-muted)]">No leads found</td>
+                  </tr>
+                )}
+                {!loading && !error && filteredLeads.map((lead) => (
                   <tr key={lead.id} className="border-b border-[var(--border-input)] hover:bg-[var(--bg-input)] transition-colors duration-200">
                     <td className="px-6 py-4 whitespace-nowrap">
                       <input
@@ -260,10 +323,11 @@ export default function ResultsExportContent() {
                   Buy Selected (Pay-per-Lead)
                 </button>
                 <button 
+                  onClick={handleDownloadSelectedCSV}
                   disabled={selectedLeads.length === 0}
                   className="px-6 py-2 bg-[var(--bg-secondary)] border border-[var(--border-input)] text-[var(--text-primary)] rounded-lg text-base hover:bg-[var(--bg-primary)] hover:text-[var(--text-primary)] transition-colors duration-300 disabled:opacity-50 disabled:cursor-not-allowed"
                 >
-                  Export Selected
+                  Export Selected (CSV)
                 </button>
               </div>
             </div>

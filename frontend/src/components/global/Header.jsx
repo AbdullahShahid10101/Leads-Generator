@@ -5,9 +5,22 @@ import { useState, useEffect } from 'react';
 import ProfileModal from './ProfileModal';
 import LogoutConfirmationModal from './LogoutConfirmationModal';
 
+const API_BASE = (typeof import.meta !== 'undefined' && import.meta?.env?.VITE_API_URL) || 'http://localhost:3000/api/v1';
+
+function decodeJwt(token) {
+  try {
+    const payload = token.split('.')[1];
+    const json = atob(payload.replace(/-/g, '+').replace(/_/g, '/'));
+    return JSON.parse(json);
+  } catch {
+    return null;
+  }
+}
+
 export default function Header({ onLogout, showAuthButtons = true, onMenuToggle, onProfileModalChange, onLogoutModalChange }) {        
   const [isProfileModalOpen, setIsProfileModalOpen] = useState(false);
   const [isLogoutModalOpen, setIsLogoutModalOpen] = useState(false);
+  const [credits, setCredits] = useState(null);
 
   // Notify parent component when modal state changes
   useEffect(() => {
@@ -21,6 +34,27 @@ export default function Header({ onLogout, showAuthButtons = true, onMenuToggle,
       onLogoutModalChange(isLogoutModalOpen);
     }
   }, [isLogoutModalOpen, onLogoutModalChange]);
+
+  // Load credits from profile
+  useEffect(() => {
+    const loadCredits = async () => {
+      try {
+        const token = localStorage.getItem('access_token');
+        if (!token) return;
+        const payload = decodeJwt(token);
+        const userId = payload?.sub || payload?.user_id || payload?.id;
+        if (!userId) return;
+        const res = await fetch(`${API_BASE}/profiles/${userId}`, {
+          headers: { Authorization: `Bearer ${token}` }
+        });
+        if (!res.ok) return;
+        const json = await res.json();
+        const p = json?.data || {};
+        if (typeof p.credits === 'number') setCredits(p.credits);
+      } catch (_) {}
+    };
+    loadCredits();
+  }, [isProfileModalOpen]);
 
   const openProfileModal = () => {
     setIsProfileModalOpen(true);
@@ -76,7 +110,7 @@ export default function Header({ onLogout, showAuthButtons = true, onMenuToggle,
           {showAuthButtons && (
             <div className="flex items-center space-x-2 lg:space-x-4">
               <button className="hidden sm:block px-3 lg:px-4 py-2 bg-[var(--bg-input)] text-[var(--text-muted)] rounded-3xl border border-[var(--border-primary)] hover:bg-[var(--border-primary)] transition-colors text-xs lg:text-sm">
-                Credits: 300
+                {`Credits: ${typeof credits === 'number' ? credits : '—'}`}
               </button>
               <button 
                 onClick={openProfileModal}

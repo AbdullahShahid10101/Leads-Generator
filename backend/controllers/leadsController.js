@@ -1,4 +1,40 @@
-const { supabase } = require('../config/supabase');
+const { supabase, adminSupabase } = require('../config/supabase');
+
+// List leads (owned by the user)
+const listLeads = async (req, res) => {
+    try {
+        const { search, limit = 100, offset = 0 } = req.query;
+
+        if (!req.user?.id) {
+            return res.status(401).json({ success: false, error: 'Unauthorized' });
+        }
+
+        // Prefer service-role client to avoid RLS 401, and enforce user filter explicitly
+        const db = adminSupabase || supabase;
+
+        let query = db
+            .from('leads')
+            .select('*')
+            .eq('added_by', req.user.id)
+            .order('created_at', { ascending: false })
+            .range(Number(offset), Number(offset) + Number(limit) - 1);
+
+        if (search) {
+            // Basic ilike filters on a few columns
+            query = query.or(
+                `name.ilike.%${search}%,company.ilike.%${search}%,email.ilike.%${search}%`
+            );
+        }
+
+        const { data, error } = await query;
+        if (error) throw error;
+
+        return res.json({ success: true, data });
+    } catch (error) {
+        console.error('List leads error:', error);
+        return res.status(500).json({ success: false, error: error.message || 'Server error' });
+    }
+};
 
 // Create a new lead
 const createLead = async (req, res) => {
@@ -134,6 +170,7 @@ const deleteLead = async (req, res) => {
 };
 
 module.exports = {
+    listLeads,
     getLead,
     updateLead,
     createLead,

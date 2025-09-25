@@ -53,8 +53,16 @@ export default function LeadFinderContent() {
   };
 
   const handleGenerateLeads = () => {
-    console.log('Generating leads with:', { ...formData, selectedSources });
-    // TODO: Implement lead generation logic
+    const payload = {
+      industry: formData.industry?.trim(),
+      location: formData.location?.trim(),
+      role: formData.role,
+      companySize: formData.companySize,
+      keywords: formData.keywords?.trim(),
+      sources: selectedSources
+    };
+    // Navigate to live scraping and pass the payload to kick off model call
+    navigate('/live-scraping', { state: { leadQuery: payload } });
   };
 
   const handlePreviewWorkflow = () => {

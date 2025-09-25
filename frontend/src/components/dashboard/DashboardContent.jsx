@@ -1,4 +1,46 @@
+import { useEffect, useState } from 'react';
+import { useNavigate } from 'react-router-dom';
+
+const API_BASE = (typeof import.meta !== 'undefined' && import.meta?.env?.VITE_API_URL) || 'http://localhost:3000/api/v1';
+
+function decodeJwt(token) {
+  try {
+    const payload = token.split('.')[1];
+    const json = atob(payload.replace(/-/g, '+').replace(/_/g, '/'));
+    return JSON.parse(json);
+  } catch {
+    return null;
+  }
+}
+
 export default function DashboardContent() {
+  const navigate = useNavigate();
+  const [planLabel, setPlanLabel] = useState('Free');
+  const [credits, setCredits] = useState(null);
+
+  useEffect(() => {
+    const loadProfile = async () => {
+      try {
+        const token = localStorage.getItem('access_token');
+        if (!token) return;
+        const payload = decodeJwt(token);
+        const userId = payload?.sub || payload?.user_id || payload?.id;
+        if (!userId) return;
+        const res = await fetch(`${API_BASE}/profiles/${userId}`, { headers: { Authorization: `Bearer ${token}` } });
+        if (!res.ok) return;
+        const json = await res.json();
+        const p = json?.data || {};
+        const label = p.subscription_active ? (p.plan_name || 'Active') : 'Free';
+        setPlanLabel(label);
+        if (typeof p.credits === 'number') setCredits(p.credits);
+      } catch (_) {}
+    };
+    loadProfile();
+  }, []);
+
+  const goToLeadFinder = () => navigate('/lead-finder');
+  const newLeadSearch = () => navigate('/area-selection');
+
   return (
     <main className="flex-1 bg-[var(--bg-primary)] p-2 sm:p-4 border border-[var(--border-input)] rounded-2xl scroll-smooth overflow-y-auto">
       {/* Welcome Section */}
@@ -9,9 +51,9 @@ export default function DashboardContent() {
         </div>
         <div className="flex flex-col sm:flex-row items-stretch sm:items-center space-y-2 sm:space-y-0 sm:space-x-4">
           <button className=" h-auto px-3 sm:px-4 py-2 bg-[var(--bg-secondary)] text-[var(--text-secondary)] rounded-lg border border-[var(--border-primary)] hover:bg-[var(--bg-primary)] transition-colors text-sm">
-            Plan: Pro
+            {`Plan: ${planLabel}`}{typeof credits === 'number' ? ` • Credits: ${credits}` : ''}
           </button>
-          <button className="h-auto items-center px-4 sm:px-4 py-2 sm:py-2 bg-gradient-to-r from-[var(--btn-primary)] to-[var(--btn-secondary)] text-[var(--bg-accent)] rounded-lg font-semibold hover:shadow-lg transition-shadow text-sm sm:text-sm" style={{ background: 'var(--btn-gradient)' }}>
+          <button onClick={newLeadSearch} className="h-auto items-center px-4 sm:px-4 py-2 sm:py-2 bg-gradient-to-r from-[var(--btn-primary)] to-[var(--btn-secondary)] text-[var(--bg-accent)] rounded-lg font-semibold hover:shadow-lg transition-shadow text-sm sm:text-sm" style={{ background: 'var(--btn-gradient)' }}>
             New Lead Search
           </button>
         </div>
@@ -66,7 +108,7 @@ export default function DashboardContent() {
             <h3 className="text-base sm:text-lg font-semibold text-[var(--text-secondary)] mb-1">Quick Actions</h3>
             <p className="text-xs sm:text-sm text-[var(--text-muted)] mb-4">One-click</p>
             <div className="grid grid-cols-1 sm:grid-cols-3 gap-2 my-6 sm:my-12">
-              <button className="px-3 sm:px-4 py-2 text-[var(--text-secondary)] rounded-lg font-medium text-sm transition-all duration-300 hover:scale-105" style={{ background: 'var(--btn-gradient)' }}>
+              <button onClick={goToLeadFinder} className="px-3 sm:px-4 py-2 text-[var(--text-secondary)] rounded-lg font-medium text-sm transition-all duration-300 hover:scale-105" style={{ background: 'var(--btn-gradient)' }}>
                 Lead Finder
               </button>
               <button className="px-3 sm:px-4 py-2 text-[var(--text-secondary)] rounded-lg border border-[var(--border-primary)] hover:bg-[var(--bg-primary)] transition-all duration-300 hover:scale-105 text-sm">
