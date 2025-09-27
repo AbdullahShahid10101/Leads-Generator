@@ -18,6 +18,7 @@ import Compliance from './Pages/Compliance';
 import PrivacyPolicy from './Pages/PrivacyPolicy';
 import TermsOfService from './Pages/TermsOfService';
 import HelpCenter from './Pages/HelpCenter';
+import RecentListDetails from './Pages/RecentListDetails';
 import ProtectedRoute from './components/global/ProtectedRoute';
 
 function App() {
@@ -53,6 +54,7 @@ function App() {
           <Route path="/privacy-policy" element={<PrivacyPolicy />} />
           <Route path="/terms-of-service" element={<TermsOfService />} />
           <Route path="/help" element={<HelpCenter />} />
+          <Route path="/recent-list-details" element={<RecentListDetails />} />
         </Routes>
       </div>
     </Router>

@@ -47,7 +47,7 @@ export default function ResultsExportContent() {
     return (leads || []).map(l => ({
       id: l.id,
       company: l.company || l.name || '',
-      contact: l.name || '',
+      name: l.name || '',
       role: l.role || '',
       email: l.email || '',
       phone: l.phone || '',
@@ -237,17 +237,20 @@ export default function ResultsExportContent() {
                       className="rounded border-[var(--border-input)] text-[var(--accent-primary)] focus:ring-[var(--accent-primary)]"
                     />
                   </th>
-                  <th className="px-6 py-3 text-left text-base font-medium text-[var(--text-muted)] uppercase tracking-wider">
-                    Company
+                   <th className="px-6 py-3 text-left text-base font-medium text-[var(--text-muted)] uppercase tracking-wider">
+                    Name
+                  </th>
+                     <th className="px-6 py-3 text-left text-base font-medium text-[var(--text-muted)] uppercase tracking-wider">
+                    Email
                   </th>
                   <th className="px-6 py-3 text-left text-base font-medium text-[var(--text-muted)] uppercase tracking-wider">
-                    Contact
+                    Phone
                   </th>
-                  <th className="px-6 py-3 text-left text-base font-medium text-[var(--text-muted)] uppercase tracking-wider">
+                   <th className="px-6 py-3 text-left text-base font-medium text-[var(--text-muted)] uppercase tracking-wider">
                     Role
                   </th>
                   <th className="px-6 py-3 text-left text-base font-medium text-[var(--text-muted)] uppercase tracking-wider">
-                    Email
+                    Company
                   </th>
                   <th className="px-6 py-3 text-left text-base font-medium text-[var(--text-muted)] uppercase tracking-wider">
                     Location
@@ -284,19 +287,22 @@ export default function ResultsExportContent() {
                       />
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap">
-                      <div className="text-sm font-medium text-[var(--text-primary)]">{lead.company}</div>
+                      <div className="text-sm font-medium text-[var(--text-primary)]">{lead.name || 'N/A'}</div>
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap">
-                      <div className="text-sm text-[var(--text-secondary)]">{lead.contact}</div>
+                      <div className="text-sm text-[var(--text-secondary)]">{lead.email || 'N/A'}</div>
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap">
-                      <div className="text-sm text-[var(--text-secondary)]">{lead.role}</div>
+                      <div className="text-sm text-[var(--text-secondary)]">{lead.phone || 'N/A'}</div>
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap">
-                      <div className="text-sm text-[var(--text-secondary)]">{lead.email}</div>
+                      <div className="text-sm text-[var(--text-secondary)]">{lead.role || 'N/A'}</div>
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap">
-                      <div className="text-sm text-[var(--text-secondary)]">{lead.location}</div>
+                      <div className="text-sm text-[var(--text-secondary)]">{lead.company || 'N/A'}</div>
+                    </td>
+                    <td className="px-6 py-4 whitespace-nowrap">
+                      <div className="text-sm text-[var(--text-secondary)]">{lead.location || 'N/A'}</div>
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap">
                       <span className={`text-sm font-semibold ${getStatusColor(lead.status)}`}>

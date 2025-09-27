@@ -1,7 +1,7 @@
 const express = require("express");
 const dotenv = require("dotenv");
 const { testConnection } = require("./config/supabase");
-
+const cors = require("cors");
 // Import middleware
 const corsMiddleware = require("./middleware/cors");
 const { logger, errorLogger } = require("./middleware/logger");
@@ -19,6 +19,15 @@ app.set('trust proxy', 1);
 // Middleware
 
 const { handleStripeWebhook } = require('./controllers/billingController');
+
+// ✅ Allow requests from Vite dev server
+app.use(cors({
+  origin: "http://localhost:5173",
+  methods: ["GET", "POST", "OPTIONS"],
+  allowedHeaders: ["Content-Type", "Authorization"],
+  exposedHeaders: ["Content-Disposition"], // so filename can be read
+  credentials: true
+}));
 
 // Stripe webhook (must use raw body) - BEFORE express.json()
 app.post(
@@ -62,6 +71,8 @@ app.use(`${API_VERSION}/profiles`, require('./routes/profilesRoutes'));
 app.use(`${API_VERSION}/leads`, require('./routes/leadsRoutes'));
 app.use(`${API_VERSION}/model`, require('./routes/modelRoutes'));
 app.use(`${API_VERSION}/billing`, require('./routes/billingRoutes'));
+app.use(`${API_VERSION}/download`, require('./routes/downloadRoutes'));
+app.use(`${API_VERSION}/recentlists`, require('./routes/recentlistRoutes'));
 
 // 404 handler
 app.use(notFound);
@@ -88,5 +99,3 @@ app.listen(PORT, async () => {
   console.log(`🌍 Environment: ${process.env.NODE_ENV || 'development'}`);
   console.log(`📝 Logs enabled: ${process.env.NODE_ENV !== 'production' ? 'Yes' : 'No'}`);
 });
-
-
