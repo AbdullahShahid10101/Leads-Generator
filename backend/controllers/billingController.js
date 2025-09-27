@@ -142,24 +142,8 @@ async function createSubscriptionCheckoutSession(req, res) {
 
     let carryOverCredits = profile?.credits || 0;
 
-    // 2️⃣ Cancel existing subscription if active
-    if (profile?.stripe_subscription_id) {
-      try {
-        await stripe.subscriptions.cancel(profile.stripe_subscription_id);
-
-        await db
-          .from("profiles")
-          .update({
-            subscription_active: false,
-            stripe_subscription_id: null,
-            plan_name: null,
-            subscription_current_period_end: null,
-          })
-          .eq("id", userId);
-      } catch (err) {
-        console.error("Failed to cancel old subscription:", err);
-      }
-    }
+    // 2️⃣ For upgrades, we'll handle old subscription cancellation in webhook
+    // after the new subscription is confirmed to avoid service interruption
 
     // 3️⃣ Get new plan info from Stripe
     const price = await stripe.prices.retrieve(priceId);
@@ -179,7 +163,9 @@ async function createSubscriptionCheckoutSession(req, res) {
         user_id: userId,
         type: "subscription",
         plan_name: planName,
-        carry_over_credits: carryOverCredits, // 👈 pass old credits into metadata
+        carry_over_credits: carryOverCredits,
+        old_subscription_id: profile?.stripe_subscription_id || "", // Track old subscription for upgrade handling
+        is_upgrade: !!profile?.stripe_subscription_id // Flag to identify upgrade scenario
       },
       success_url: `${process.env.FRONTEND_URL}/billing-plans?status=success`,
       cancel_url: `${process.env.FRONTEND_URL}/billing-plans?status=cancelled`,
@@ -242,6 +228,22 @@ async function handleStripeWebhook(req, res) {
         session.customer
       );
 
+      // Handle upgrade scenario - cancel old subscription first, then update profile
+      const isUpgrade = session.metadata?.is_upgrade === "true";
+      const oldSubscriptionId = session.metadata?.old_subscription_id;
+      
+      if (isUpgrade && oldSubscriptionId) {
+        try {
+          console.log(`Canceling old subscription ${oldSubscriptionId} after successful upgrade`);
+          await stripe.subscriptions.cancel(oldSubscriptionId);
+          // No need to update database - the webhook will handle subscription deletion
+        } catch (err) {
+          console.error("Failed to cancel old subscription during upgrade:", err);
+          // Don't throw error - the new subscription is already active
+        }
+      }
+
+      // Now update profile with new subscription details and carry over credits
       if (profile?.id) {
         // Carry over credits if provided in metadata (0 on first subscription)
         const carryOver = Number(session.metadata?.carry_over_credits || 0);
@@ -325,6 +327,7 @@ async function handleStripeWebhook(req, res) {
           subscription_active: false,
           plan_name: null,
           stripe_subscription_id: null,
+          stripe_customer_id: null,
           monthly_included_credits: 0,
           annual_included_credits: 0,
           credits: profile.credits || 0, // keep remaining credits
@@ -405,6 +408,7 @@ async function cancelSubscriptionImmediately(req, res) {
       subscription_active: false,
       plan_name: null,
       stripe_subscription_id: null,
+      stripe_customer_id: null,
       monthly_included_credits: 0,
       annual_included_credits: 0,
       subscription_current_period_end: null,
