@@ -522,10 +522,28 @@ export default function LiveScrapingContent() {
   }, [isRunning]);
 
   const handleNavigateToCleaning = () => {
+    // Get lead query from location state or use defaults
+    const leadQuery = location.state?.leadQuery || {
+      industry: 'Technology',
+      location: 'New York',
+      sources: selectedSources
+    };
+
     if (currentJobId) {
-      navigate('/cleaning-verify', { state: { jobId: currentJobId } });
+      navigate('/cleaning-verify', { 
+        state: { 
+          jobId: currentJobId,
+          industry: leadQuery.industry,
+          location: leadQuery.location
+        } 
+      });
     } else {
-      navigate('/cleaning-verify');
+      navigate('/cleaning-verify', {
+        state: {
+          industry: leadQuery.industry,
+          location: leadQuery.location
+        }
+      });
     }
   };
 
@@ -702,5 +720,3 @@ export default function LiveScrapingContent() {
     </div>
   );
 }
-
-

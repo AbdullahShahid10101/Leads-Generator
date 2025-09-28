@@ -2,6 +2,13 @@ import { useEffect, useMemo, useState } from 'react';
 import { useLocation } from 'react-router-dom';
 import { getSavedLeads, saveCleanedLeads } from '../../service/modelService';
 
+// Local storage keys
+const LOCAL_STORAGE_KEYS = {
+  PENDING_LEADS: 'pending_leads',
+  LATEST_SCRAPED_LEADS: 'latest_scraped_leads',
+  SCRAPING_CONTEXT: 'scraping_context'
+};
+
 export default function ResultsExportContent() {
   const location = useLocation();
   const [selectedLeads, setSelectedLeads] = useState([]);
@@ -11,8 +18,56 @@ export default function ResultsExportContent() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
   const [pendingLeads, setPendingLeads] = useState([]);
+  const [latestScrapedLeads, setLatestScrapedLeads] = useState([]);
   const [saving, setSaving] = useState(false);
+  const [showLatestScraped, setShowLatestScraped] = useState(false);
 
+  // Load data from localStorage on component mount - but only load if not already saved
+  useEffect(() => {
+    const loadFromStorage = () => {
+      try {
+        const storedPending = localStorage.getItem(LOCAL_STORAGE_KEYS.PENDING_LEADS);
+        const storedLatest = localStorage.getItem(LOCAL_STORAGE_KEYS.LATEST_SCRAPED_LEADS);
+        const storedContext = localStorage.getItem(LOCAL_STORAGE_KEYS.SCRAPING_CONTEXT);
+        
+        // Only load pending leads if they exist and haven't been saved
+        if (storedPending) {
+          const pendingLeadsData = JSON.parse(storedPending);
+          // Check if these leads have already been saved (by comparing with empty array)
+          if (pendingLeadsData.length > 0) {
+            setPendingLeads(pendingLeadsData);
+          } else {
+            localStorage.removeItem(LOCAL_STORAGE_KEYS.PENDING_LEADS);
+          }
+        }
+        
+        // Only load latest scraped leads if they exist and haven't been saved
+        if (storedLatest) {
+          const latestLeads = JSON.parse(storedLatest);
+          if (latestLeads.length > 0) {
+            setLatestScrapedLeads(latestLeads);
+            // Automatically show latest scraped leads when they exist
+            setShowLatestScraped(true);
+          } else {
+            localStorage.removeItem(LOCAL_STORAGE_KEYS.LATEST_SCRAPED_LEADS);
+          }
+        }
+
+        // Store scraping context for later use in filtering
+        if (storedContext) {
+          localStorage.setItem('current_scraping_context', storedContext);
+        }
+      } catch (error) {
+        console.error('Error loading from localStorage:', error);
+      }
+    };
+
+    loadFromStorage();
+  }, []);
+
+  // Manual localStorage management - we'll handle saving manually in handleSaveLeads
+
+  // Load saved leads from database
   useEffect(() => {
     let active = true;
     async function load() {
@@ -21,8 +76,27 @@ export default function ResultsExportContent() {
       try {
         const data = await getSavedLeads({ limit: 500 });
         if (!active) return;
-        const arr = Array.isArray(data) ? data : (data?.data || []);
-        setLeads(arr);
+        const allLeads = Array.isArray(data) ? data : (data?.data || []);
+             let recentlySavedLeads = allLeads;
+        try {
+          const scrapingContextStr = localStorage.getItem('current_scraping_context');
+          if (scrapingContextStr) {
+            const scrapingContext = JSON.parse(scrapingContextStr);
+            
+            // Filter leads by industry and location from scraping context
+            recentlySavedLeads = allLeads.filter(lead => 
+              (!scrapingContext.industry || scrapingContext.industry === 'unknown' || 
+               (lead.industry && lead.industry.toLowerCase().includes(scrapingContext.industry.toLowerCase()))) &&
+              (!scrapingContext.location || scrapingContext.location === 'unknown' || 
+               (lead.location && lead.location.toLowerCase().includes(scrapingContext.location.toLowerCase())))
+            );
+          }
+        } catch (contextError) {
+          console.error('Error parsing scraping context:', contextError);   
+          // Fallback to showing all leads if context parsing fails
+          recentlySavedLeads = allLeads;
+        }
+        setLeads(recentlySavedLeads);
         setSelectedLeads([]);
       } catch (e) {
         if (!active) return;
@@ -33,13 +107,14 @@ export default function ResultsExportContent() {
     }
     load();
     return () => { active = false; };
-  }, []);
+  }, [showLatestScraped]);
 
-  // Pick up pending leads passed from Cleaning page
+  // Pick up pending leads passed from Cleaning page and save to localStorage
   useEffect(() => {
     const incoming = location.state?.pendingLeads;
     if (Array.isArray(incoming) && incoming.length > 0) {
       setPendingLeads(incoming);
+      setLatestScrapedLeads(incoming); // Also set as latest scraped leads
     }
   }, [location.state]);
 
@@ -59,6 +134,22 @@ export default function ResultsExportContent() {
     }));
   }, [leads]);
 
+  const latestScrapedUiLeads = useMemo(() => {
+    return (latestScrapedLeads || []).map((l, index) => ({
+      id: `scraped-${index}`,
+      company: l.company || l.name || '',
+      name: l.name || '',
+      role: l.role || '',
+      email: l.email || '',
+      phone: l.phone || '',
+      location: l.location || '',
+      industry: l.industry || '',
+      source: l.source || 'scraped',
+      status: 'Pending Save',
+      created_at: new Date().toISOString()
+    }));
+  }, [latestScrapedLeads]);
+
   const handleSelectLead = (leadId) => {
     if (selectedLeads.includes(leadId)) {
       setSelectedLeads(selectedLeads.filter(id => id !== leadId));
@@ -68,10 +159,11 @@ export default function ResultsExportContent() {
   };
 
   const handleSelectAll = () => {
-    if (selectedLeads.length === uiLeads.length) {
+    const currentLeads = showLatestScraped ? latestScrapedUiLeads : uiLeads;
+    if (selectedLeads.length === currentLeads.length) {
       setSelectedLeads([]);
     } else {
-      setSelectedLeads(uiLeads.map(lead => lead.id));
+      setSelectedLeads(currentLeads.map(lead => lead.id));
     }
   };
 
@@ -79,6 +171,8 @@ export default function ResultsExportContent() {
     switch (status) {
       case 'Verified':
         return 'text-green-500';
+      case 'Pending Save':
+        return 'text-yellow-500';
       case 'Failed':
         return 'text-red-500';
       default:
@@ -86,21 +180,21 @@ export default function ResultsExportContent() {
     }
   };
 
-  const filteredLeads = uiLeads.filter(lead =>
+  const filteredLeads = (showLatestScraped ? latestScrapedUiLeads : uiLeads).filter(lead =>
     lead.company.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    lead.contact.toLowerCase().includes(searchTerm.toLowerCase()) ||
+    lead.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
     lead.email.toLowerCase().includes(searchTerm.toLowerCase())
   );
 
   function toCSV(rows) {
     if (!rows || rows.length === 0) return '';
-    const headers = ['id','company','contact','email','phone','location','industry','source','created_at'];
+    const headers = ['id','company','name','email','phone','location','industry','source','created_at'];
     const out = [headers.join(',')];
     rows.forEach(r => {
       const vals = [
         r.id,
         r.company || '',
-        r.contact || '',
+        r.name || '',
         r.email || '',
         r.phone || '',
         r.location || '',
@@ -126,32 +220,86 @@ export default function ResultsExportContent() {
   }
 
   const handleDownloadAllCSV = () => {
-    const csv = toCSV(uiLeads);
+    const csv = toCSV(showLatestScraped ? latestScrapedUiLeads : uiLeads);
     download('leads.csv', csv, 'text/csv;charset=utf-8;');
   };
 
   const handleDownloadSelectedCSV = () => {
-    const rows = uiLeads.filter(l => selectedLeads.includes(l.id));
+    const currentLeads = showLatestScraped ? latestScrapedUiLeads : uiLeads;
+    const rows = currentLeads.filter(l => selectedLeads.includes(l.id));
     const csv = toCSV(rows);
     download('leads_selected.csv', csv, 'text/csv;charset=utf-8;');
   };
 
   const handleDownloadAllJSON = () => {
-    download('leads.json', JSON.stringify(leads, null, 2), 'application/json');
+    const data = showLatestScraped ? latestScrapedLeads : leads;
+    download('leads.json', JSON.stringify(data, null, 2), 'application/json');
   };
 
-  const handleSavePendingLeads = async () => {
-    if (!pendingLeads || pendingLeads.length === 0) return;
+  const handleSaveAllLeads = async () => {
+    if (showLatestScraped) {
+      await handleSaveLeads(latestScrapedLeads);
+    } else {
+      const selectedData = uiLeads.filter(l => selectedLeads.includes(l.id));
+      await handleSaveLeads(selectedData);
+    }
+  };
+
+  const handleSaveSelectedLeads = async () => {
+    if (showLatestScraped) {
+      const selectedData = latestScrapedLeads.filter((_, index) => 
+        selectedLeads.includes(`scraped-${index}`)
+      );
+      await handleSaveLeads(selectedData);
+    } else {
+      const selectedData = leads.filter(lead => 
+        selectedLeads.includes(lead.id)
+      );
+      await handleSaveLeads(selectedData);
+    }
+  };
+
+  const handleSaveLeads = async (leadsToSave) => {
+    if (!leadsToSave || leadsToSave.length === 0) return;
+    
     setSaving(true);
     try {
-      const res = await saveCleanedLeads(pendingLeads);
+      const res = await saveCleanedLeads(leadsToSave);
       if (res?.success) {
-        // refresh list
-        const data = await getSavedLeads({ limit: 500 });
-        const arr = Array.isArray(data) ? data : (data?.data || []);
-        setLeads(arr);
-        setPendingLeads([]);
-        alert(`Saved ${res.inserted_count || 0} leads`);
+        // Remove saved leads from latest preview and localStorage
+        if (showLatestScraped) {
+          // Check if we're saving all leads (based on selection count)
+          if (selectedLeads.length === 0 || selectedLeads.length === latestScrapedLeads.length) {
+            // Saving all leads - clear everything from localStorage and state
+            setLatestScrapedLeads([]);
+            setPendingLeads([]);
+            localStorage.removeItem(LOCAL_STORAGE_KEYS.LATEST_SCRAPED_LEADS);
+            localStorage.removeItem(LOCAL_STORAGE_KEYS.PENDING_LEADS);
+            localStorage.removeItem(LOCAL_STORAGE_KEYS.SCRAPING_CONTEXT);
+          } else {
+            // Saving selected leads - remove only the selected ones from preview
+            const remainingLeads = latestScrapedLeads.filter((_, index) => 
+              !selectedLeads.includes(`scraped-${index}`)
+            );
+            setLatestScrapedLeads(remainingLeads);
+            localStorage.setItem(LOCAL_STORAGE_KEYS.LATEST_SCRAPED_LEADS, JSON.stringify(remainingLeads));
+            
+            // Also update pending leads if they exist
+            if (pendingLeads.length > 0) {
+              const remainingPendingLeads = pendingLeads.filter((_, index) => 
+                !selectedLeads.includes(`scraped-${index}`)
+              );
+              setPendingLeads(remainingPendingLeads);
+              localStorage.setItem(LOCAL_STORAGE_KEYS.PENDING_LEADS, JSON.stringify(remainingPendingLeads));
+            }
+          }
+        }
+        
+        // Clear selection and toggle to saved leads view
+        setSelectedLeads([]);
+        setShowLatestScraped(false);
+        
+        alert(`Successfully saved ${res.inserted_count || 0} leads to database`);
       } else {
         alert(res?.error || 'Failed to save leads');
       }
@@ -160,6 +308,15 @@ export default function ResultsExportContent() {
     } finally {
       setSaving(false);
     }
+  };
+
+  const handleSavePendingLeads = async () => {
+    await handleSaveLeads(pendingLeads);
+  };
+
+  const clearLatestScraped = () => {
+    setLatestScrapedLeads([]);
+    setSelectedLeads([]);
   };
 
   return (
@@ -174,33 +331,106 @@ export default function ResultsExportContent() {
               Results & Export
             </h1>
             <p className="text-[var(--text-muted)] text-xs lg:text-sm">
-              Download: CSV • Excel • JSON • Push to CRM or API
+              {showLatestScraped 
+                ? `Previewing ${latestScrapedLeads.length} latest scraped leads` 
+                : `Viewing ${leads.length} saved leads from database`}
             </p>
           </div>
           
           {/* Right Side: Action Buttons */}
           <div className="flex flex-col sm:flex-row gap-3 lg:justify-end lg:items-center">
-            <button onClick={handleSavePendingLeads} disabled={saving || pendingLeads.length === 0} className="text-base px-4 py-2 bg-[var(--accent-primary)] text-[var(--text-secondary)] rounded-lg  hover:bg-[var(--accent-primary)] transition-colors duration-300 disabled:opacity-50 disabled:cursor-not-allowed" style={{ background: 'var(--btn-gradient)' }}>
-              {saving ? 'Saving…' : `Save List to Database  (${pendingLeads.length})`}
-            </button>
-            <button onClick={handleDownloadAllCSV} disabled={loading || uiLeads.length === 0} className="text-base px-4 py-2 bg-[var(--bg-secondary)] border border-[var(--border-input)] text-[var(--text-secondary)] rounded-lg  hover:bg-[var(--bg-primary)] hover:text-[var(--text-primary)] transition-colors duration-300 disabled:opacity-50 disabled:cursor-not-allowed">
+            {pendingLeads.length > 0 && (
+              <button onClick={handleSavePendingLeads} disabled={saving} className="text-base px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors duration-300 disabled:opacity-50 disabled:cursor-not-allowed">
+                {saving ? 'Saving…' : `Save Pending (${pendingLeads.length})`}
+              </button>
+            )}
+            {latestScrapedLeads.length > 0 && (
+              <button onClick={() => setShowLatestScraped(!showLatestScraped)} className="text-base px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors duration-300">
+                {showLatestScraped ? 'View Saved Leads' : `View Latest Scraped (${latestScrapedLeads.length})`}
+              </button>
+            )}
+            <button onClick={handleDownloadAllCSV} disabled={loading || (showLatestScraped ? latestScrapedUiLeads.length === 0 : uiLeads.length === 0)} className="text-base px-4 py-2 bg-[var(--bg-secondary)] border border-[var(--border-input)] text-[var(--text-secondary)] rounded-lg hover:bg-[var(--bg-primary)] hover:text-[var(--text-primary)] transition-colors duration-300 disabled:opacity-50 disabled:cursor-not-allowed">
               Download CSV
             </button>
-            <button onClick={handleDownloadAllJSON} disabled={loading || uiLeads.length === 0} className="text-base px-4 py-2 bg-[var(--bg-secondary)] border border-[var(--border-input)] text-[var(--text-secondary)] rounded-lg hover:bg-[var(--bg-primary)] hover:text-[var(--text-primary)] transition-colors duration-300 disabled:opacity-50 disabled:cursor-not-allowed">
+            <button onClick={handleDownloadAllJSON} disabled={loading || (showLatestScraped ? latestScrapedLeads.length === 0 : leads.length === 0)} className="text-base px-4 py-2 bg-[var(--bg-secondary)] border border-[var(--border-input)] text-[var(--text-secondary)] rounded-lg hover:bg-[var(--bg-primary)] hover:text-[var(--text-primary)] transition-colors duration-300 disabled:opacity-50 disabled:cursor-not-allowed">
               Download JSON
             </button>
           </div>
         </div>
 
+        {/* View Toggle */}
+        <div className="mb-6 flex items-center gap-4">
+          <span className="text-[var(--text-muted)] text-sm">View:</span>
+          <button
+            onClick={() => setShowLatestScraped(false)}
+            className={`px-4 py-2 rounded-lg text-sm ${
+              !showLatestScraped
+                ? 'bg-[var(--accent-primary)] text-white'
+                : 'bg-[var(--bg-secondary)] text-[var(--text-secondary)]'
+            }`}
+          >
+            Saved Leads ({leads.length})
+          </button>
+          {latestScrapedLeads.length > 0 && (
+            <button
+              onClick={() => setShowLatestScraped(true)}
+              className={`px-4 py-2 rounded-lg text-sm ${
+                showLatestScraped
+                  ? 'bg-[var(--accent-primary)] text-white'
+                  : 'bg-[var(--bg-secondary)] text-[var(--text-secondary)]'
+              }`}
+            >
+              Latest Scraped ({latestScrapedLeads.length})
+            </button>
+          )}
+        </div>
+
+        {/* Save Actions */}
+        {showLatestScraped && latestScrapedLeads.length > 0 && (
+          <div className="mb-6 p-4 bg-yellow-100 border border-yellow-300 rounded-lg">
+            <div className="flex flex-col sm:flex-row items-center gap-4">
+              <span className="text-yellow-800 font-medium">
+                {selectedLeads.length > 0 
+                  ? `${selectedLeads.length} leads selected` 
+                  : `${latestScrapedLeads.length} scraped leads ready to save`}
+              </span>
+              <div className="flex gap-3">
+                <button
+                  onClick={handleSaveAllLeads}
+                  disabled={saving}
+                  className="px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 disabled:opacity-50"
+                >
+                  {saving ? 'Saving...' : 'Save All to Database'}
+                </button>
+                {selectedLeads.length > 0 && (
+                  <button
+                    onClick={handleSaveSelectedLeads}
+                    disabled={saving}
+                    className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 disabled:opacity-50"
+                  >
+                    {saving ? 'Saving...' : `Save Selected (${selectedLeads.length})`}
+                  </button>
+                )}
+                <button
+                  onClick={clearLatestScraped}
+                  className="px-4 py-2 bg-gray-600 text-white rounded-lg hover:bg-gray-700"
+                >
+                  Clear Preview
+                </button>
+              </div>
+            </div>
+          </div>
+        )}
+
         {/* Combined Container: Search, Table, and Actions */}
         <div className="bg-[var(--bg-secondary)] border border-[var(--border-input)] rounded-xl shadow-lg overflow-hidden">
-                    {/* Search and Bulk Actions */}
+          {/* Search and Bulk Actions */}
           <div className="p-6">
             <div className="flex flex-col lg:flex-row lg:items-end gap-4">
               <div className="flex-1">
                 <input
                   type="text"
-                  placeholder="Search company, contact, email..."
+                  placeholder="Search company, name, email..."
                   value={searchTerm}
                   onChange={(e) => setSearchTerm(e.target.value)}
                   className="w-full px-4 py-2 bg-[var(--bg-secondary)] border border-[var(--border-input)] rounded-lg text-[var(--text-primary)] placeholder-[var(--text-secondary)] focus:outline-none focus:ring-2 focus:ring-[var(--accent-primary)]"
@@ -232,21 +462,21 @@ export default function ResultsExportContent() {
                   <th className="px-6 py-3 text-left text-xs font-medium text-[var(--text-secondary)] uppercase tracking-wider">
                     <input
                       type="checkbox"
-                      checked={selectedLeads.length > 0 && selectedLeads.length === uiLeads.length}
+                      checked={selectedLeads.length > 0 && selectedLeads.length === (showLatestScraped ? latestScrapedUiLeads.length : uiLeads.length)}
                       onChange={handleSelectAll}
                       className="rounded border-[var(--border-input)] text-[var(--accent-primary)] focus:ring-[var(--accent-primary)]"
                     />
                   </th>
-                   <th className="px-6 py-3 text-left text-base font-medium text-[var(--text-muted)] uppercase tracking-wider">
+                  <th className="px-6 py-3 text-left text-base font-medium text-[var(--text-muted)] uppercase tracking-wider">
                     Name
                   </th>
-                     <th className="px-6 py-3 text-left text-base font-medium text-[var(--text-muted)] uppercase tracking-wider">
+                  <th className="px-6 py-3 text-left text-base font-medium text-[var(--text-muted)] uppercase tracking-wider">
                     Email
                   </th>
                   <th className="px-6 py-3 text-left text-base font-medium text-[var(--text-muted)] uppercase tracking-wider">
                     Phone
                   </th>
-                   <th className="px-6 py-3 text-left text-base font-medium text-[var(--text-muted)] uppercase tracking-wider">
+                  <th className="px-6 py-3 text-left text-base font-medium text-[var(--text-muted)] uppercase tracking-wider">
                     Role
                   </th>
                   <th className="px-6 py-3 text-left text-base font-medium text-[var(--text-muted)] uppercase tracking-wider">
@@ -263,17 +493,17 @@ export default function ResultsExportContent() {
               <tbody>
                 {loading && (
                   <tr>
-                    <td colSpan={7} className="px-6 py-6 text-center text-[var(--text-muted)]">Loading leads...</td>
+                    <td colSpan={8} className="px-6 py-6 text-center text-[var(--text-muted)]">Loading leads...</td>
                   </tr>
                 )}
                 {!loading && error && (
                   <tr>
-                    <td colSpan={7} className="px-6 py-6 text-center text-red-500">{error}</td>
+                    <td colSpan={8} className="px-6 py-6 text-center text-red-500">{error}</td>
                   </tr>
                 )}
                 {!loading && !error && filteredLeads.length === 0 && (
                   <tr>
-                    <td colSpan={7} className="px-6 py-6 text-center text-[var(--text-muted)]">No leads found</td>
+                    <td colSpan={8} className="px-6 py-6 text-center text-[var(--text-muted)]">No leads found</td>
                   </tr>
                 )}
                 {!loading && !error && filteredLeads.map((lead) => (
@@ -335,6 +565,15 @@ export default function ResultsExportContent() {
                 >
                   Export Selected (CSV)
                 </button>
+                {showLatestScraped && selectedLeads.length > 0 && (
+                  <button 
+                    onClick={handleSaveSelectedLeads}
+                    disabled={saving}
+                    className="px-6 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 disabled:opacity-50"
+                  >
+                    {saving ? 'Saving...' : `Save Selected (${selectedLeads.length})`}
+                  </button>
+                )}
               </div>
             </div>
           </div>

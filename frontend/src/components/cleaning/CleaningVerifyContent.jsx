@@ -163,6 +163,25 @@ export default function CleaningVerifyContent() {
       alert('No leads to view. Run cleaning first.');
       return;
     }
+    
+    // Save to localStorage for persistence - save leads and scraping context
+    try {
+      localStorage.setItem('latest_scraped_leads', JSON.stringify(payload));
+      localStorage.removeItem('pending_leads'); // Clear old pending leads
+      
+      // Store scraping context - try to extract from leads or location state
+      const scrapingContext = {
+        industry: location.state?.industry || 
+                  (payload[0]?.industry || 'unknown'),
+        location: location.state?.location || 
+                  (payload[0]?.location || payload[0]?.address || 'unknown'),
+        timestamp: new Date().toISOString()
+      };
+      localStorage.setItem('scraping_context', JSON.stringify(scrapingContext));
+    } catch (error) {
+      console.error('Error saving to localStorage:', error);
+    }
+    
     navigate('/results-export', { state: { pendingLeads: payload } });
   };
 
@@ -329,5 +348,3 @@ export default function CleaningVerifyContent() {
     </div>
   );
 }
-
-
