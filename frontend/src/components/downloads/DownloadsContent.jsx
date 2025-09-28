@@ -10,7 +10,7 @@ export default function DownloadsContent() {
   const [selectedList, setSelectedList] = useState("");
   const [format, setFormat] = useState("CSV");
   const [fields, setFields] = useState(
-    "company,contact,role,email,phone,website,location,status"
+    "company,name,role,email,phone,website,location,status"
   );
   const [downloadHistory, setDownloadHistory] = useState([]);
   const [availableLists, setAvailableLists] = useState([]);

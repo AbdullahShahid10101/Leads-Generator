@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useState } from 'react';
 import { useLocation } from 'react-router-dom';
 import { getSavedLeads, saveCleanedLeads } from '../../service/modelService';
+import Toast from '../global/Toast';
 
 // Local storage keys
 const LOCAL_STORAGE_KEYS = {
@@ -21,6 +22,7 @@ export default function ResultsExportContent() {
   const [latestScrapedLeads, setLatestScrapedLeads] = useState([]);
   const [saving, setSaving] = useState(false);
   const [showLatestScraped, setShowLatestScraped] = useState(false);
+  const [toast, setToast] = useState({ show: false, message: '', type: 'success' });
 
   // Load data from localStorage on component mount - but only load if not already saved
   useEffect(() => {
@@ -317,12 +319,12 @@ export default function ResultsExportContent() {
         setSelectedLeads([]);
         setShowLatestScraped(false);
         
-        alert(`Successfully saved ${res.inserted_count || 0} leads to database`);
+        setToast({ show: true, message: `Successfully saved ${res.inserted_count || 0} leads to database`, type: 'success' });
       } else {
-        alert(res?.error || 'Failed to save leads');
+        setToast({ show: true, message: res?.error || 'Failed to save leads', type: 'error' });
       }
     } catch (e) {
-      alert(e?.response?.data?.error || e?.message || 'Failed to save leads');
+      setToast({ show: true, message: e?.response?.data?.error || e?.message || 'Failed to save leads', type: 'error' });
     } finally {
       setSaving(false);
     }
@@ -597,6 +599,12 @@ export default function ResultsExportContent() {
           </div>
         </div>
       </div>
+      <Toast
+        message={toast.message}
+        type={toast.type}
+        isVisible={toast.show}
+        onClose={() => setToast({ show: false, message: '', type: 'success' })}
+      />
     </div>
   );
 }

@@ -50,16 +50,17 @@ const exportLeads = async (req, res) => {
     // Parse requested fields
     const fieldList = fields.split(",").map((field) => field.trim());
 
-    // Prepare data for export
+    // Prepare data for export - use correct field mapping
     const exportData = leads.map((lead) => ({
-      company: lead.company || "",
-      contact: lead.name || "",
-      role: lead.industry || "",
-      email: lead.email || "",
-      phone: lead.phone || "",
-      website: lead.source || "",
-      location: lead.location || "",
-      status: "New",
+      company: lead.company || "N/A",
+      name: lead.name || "N/A",
+      role: lead.role || "N/A",
+      email: lead.email || "N/A",
+      phone: lead.phone || "N/A",
+      website: lead.source || "N/A",
+      location: lead.location || "N/A",
+      industry: lead.industry || "N/A",
+      status: lead.status || "N/A",
     }));
 
     let fileContent;
@@ -108,52 +109,120 @@ const exportLeads = async (req, res) => {
         doc.moveDown();
         doc.fontSize(12).text(`Generated on: ${new Date().toLocaleString()}`);
         doc.text(`Total leads: ${leads.length}`);
-        doc.moveDown();
+        if (listName) {
+          doc.text(`List: ${listName}`);
+        }
+        doc.moveDown(2);
 
-        const startX = 50;
-        let yPosition = doc.y + 20;
-        const columnWidth = (doc.page.width - 2 * startX) / fieldList.length;
+        // Calculate column widths based on content
+        const pageWidth = doc.page.width;
+        const margin = 40;
+        const availableWidth = pageWidth - 2 * margin;
+        const minColumnWidth = 60;
+        const maxColumnWidth = 120;
 
-        // ---- Draw table headers ----
-        doc.fontSize(10).font("Helvetica-Bold");
-        fieldList.forEach((field, i) => {
-          doc.text(field.toUpperCase(), startX + i * columnWidth, yPosition, {
-            width: columnWidth - 5,
-            ellipsis: true,
+        // Calculate optimal column widths
+        const columnWidths = fieldList.map(field => {
+          let maxWidth = doc.widthOfString(field.toUpperCase(), { fontSize: 10 });
+
+          // Check data content width
+          exportData.forEach(lead => {
+            const value = String(lead[field] || "");
+            const width = doc.widthOfString(value, { fontSize: 9 });
+            if (width > maxWidth) maxWidth = width;
           });
+
+          return Math.min(Math.max(maxWidth + 15, minColumnWidth), maxColumnWidth);
+        });
+
+        // Adjust column widths to fit page
+        const totalWidth = columnWidths.reduce((sum, width) => sum + width, 0);
+        const scaleFactor = availableWidth / totalWidth;
+        const adjustedColumnWidths = columnWidths.map(width => width * scaleFactor);
+
+        let yPosition = doc.y + 20;
+
+        // Function to check if we need a new page
+        const checkPageBreak = (requiredHeight) => {
+          if (yPosition + requiredHeight > doc.page.height - margin) {
+            doc.addPage();
+            yPosition = margin;
+            return true;
+          }
+          return false;
+        };
+
+        // Draw table headers
+        doc.fontSize(10).font("Helvetica-Bold");
+        let currentX = margin;
+
+        fieldList.forEach((field, i) => {
+          doc.text(field.toUpperCase(), currentX, yPosition, {
+            width: adjustedColumnWidths[i],
+            align: 'left'
+          });
+          currentX += adjustedColumnWidths[i];
         });
 
         yPosition += 20;
-        doc.font("Helvetica"); // reset font
 
-        // ---- Draw table rows ----
-        exportData.forEach((lead) => {
-          if (yPosition > doc.page.height - 50) {
-            doc.addPage();
-            yPosition = 50;
-          }
+        // Draw header underline
+        doc.moveTo(margin, yPosition).lineTo(margin + availableWidth, yPosition).stroke();
+        yPosition += 5;
 
-          // Calculate row height (max height among all fields)
-          let rowHeight = 0;
+        doc.font("Helvetica").fontSize(9); // reset font and size
+
+        // Draw table rows
+        exportData.forEach((lead, rowIndex) => {
+          // Calculate row height
+          let rowHeight = 15; // minimum height
           const rowValues = fieldList.map((f) => String(lead[f] || ""));
 
           rowValues.forEach((val, i) => {
-            const h = doc.heightOfString(val, {
-              width: columnWidth - 5,
+            const textHeight = doc.heightOfString(val, {
+              width: adjustedColumnWidths[i] - 5,
               align: "left",
             });
-            if (h > rowHeight) rowHeight = h;
+            if (textHeight > rowHeight) rowHeight = textHeight;
           });
 
-          // Draw each cell
-          rowValues.forEach((val, i) => {
-            doc.text(val, startX + i * columnWidth, yPosition, {
-              width: columnWidth - 5,
-              continued: false,
+          // Check if we need a new page
+          if (checkPageBreak(rowHeight + 10)) {
+            // Redraw headers on new page
+            doc.font("Helvetica-Bold").fontSize(10);
+            currentX = margin;
+            fieldList.forEach((field, i) => {
+              doc.text(field.toUpperCase(), currentX, yPosition, {
+                width: adjustedColumnWidths[i],
+                align: 'left'
+              });
+              currentX += adjustedColumnWidths[i];
             });
+            yPosition += 20;
+
+            doc.moveTo(margin, yPosition).lineTo(margin + availableWidth, yPosition).stroke();
+            yPosition += 5;
+
+            doc.font("Helvetica").fontSize(9);
+          }
+
+          // Draw row data
+          currentX = margin;
+          rowValues.forEach((val, i) => {
+            doc.text(val, currentX + 3, yPosition + 4, {
+              width: adjustedColumnWidths[i] - 6,
+              align: "left",
+              lineGap: 1
+            });
+            currentX += adjustedColumnWidths[i];
           });
 
-          yPosition += rowHeight + 10; // move to next row
+          // Draw row separator with more space from text
+          doc.moveTo(margin, yPosition + rowHeight + 8)
+             .lineTo(margin + availableWidth, yPosition + rowHeight + 8)
+             .stroke();
+
+          yPosition += rowHeight + 10;
         });
 
         doc.end();
