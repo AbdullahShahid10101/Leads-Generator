@@ -67,17 +67,35 @@ export default function ResultsExportContent() {
 
   // Manual localStorage management - we'll handle saving manually in handleSaveLeads
 
-  // Load saved leads from database
+  // Load saved leads from database based on pending leads logic
   useEffect(() => {
     let active = true;
     async function load() {
       setLoading(true);
       setError('');
       try {
-        const data = await getSavedLeads({ limit: 500 });
+        // Get pending leads count from localStorage
+        const storedPending = localStorage.getItem(LOCAL_STORAGE_KEYS.LATEST_SCRAPED_LEADS);
+        const pendingLeadsData = storedPending ? JSON.parse(storedPending) : [];
+        const pendingCount = pendingLeadsData.length;
+        console.log('Pending leads count from storage:', pendingCount);
+        
+        // If there are 20 pending leads, don't show any saved leads
+        if (pendingCount >= 20) {
+          setLeads([]);
+          setSelectedLeads([]);
+          setLoading(false);
+          return;
+        }
+        
+        // Calculate limit for saved leads: 20 - pendingCount
+        const savedLeadsLimit = 20 - pendingCount;
+        
+        const data = await getSavedLeads({ limit: savedLeadsLimit });
         if (!active) return;
         const allLeads = Array.isArray(data) ? data : (data?.data || []);
-             let recentlySavedLeads = allLeads;
+        
+        let recentlySavedLeads = allLeads;
         try {
           const scrapingContextStr = localStorage.getItem('current_scraping_context');
           if (scrapingContextStr) {
@@ -107,7 +125,7 @@ export default function ResultsExportContent() {
     }
     load();
     return () => { active = false; };
-  }, [showLatestScraped]);
+  },  [showLatestScraped]);
 
   // Pick up pending leads passed from Cleaning page and save to localStorage
   useEffect(() => {
